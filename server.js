@@ -122,40 +122,31 @@ app.get("/api/availability", (req, res) => {
 
   const allSlots = getDailySlots();
 
-  db.all(
-    "SELECT time FROM bookings WHERE date = ?",
-    [date],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: "Erreur serveur" });
-      }
-
-      const booked = new Set(rows.map((r) => r.time));
-      const result = allSlots.map((time) => ({
-        time,
-        available: !booked.has(time)
-      }));
-
-      return res.json({ date, slots: result });
-    }
-  );
+  try {
+    const rows = db.prepare("SELECT time FROM bookings WHERE date = ?").all(date);
+    const booked = new Set(rows.map((r) => r.time));
+    const result = allSlots.map((time) => ({
+      time,
+      available: !booked.has(time)
+    }));
+    return res.json({ date, slots: result });
+  } catch (err) {
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 app.get("/api/bookings", (_, res) => {
-  db.all(
-    "SELECT id, client_name, client_email, service, date, time, created_at FROM bookings ORDER BY date ASC, time ASC",
-    [],
-    (err, rows) => {
-      if (err) {
-        return res.status(500).json({ error: "Erreur serveur" });
-      }
-
-      return res.json({ bookings: rows });
-    }
-  );
+  try {
+    const rows = db.prepare(
+      "SELECT id, client_name, client_email, service, date, time, created_at FROM bookings ORDER BY date ASC, time ASC"
+    ).all();
+    return res.json({ bookings: rows });
+  } catch (err) {
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
-app.post("/api/bookings", (req, res) => {
+app.post("/api/bookings", async (req, res) => {
   const { name, email, service, date, time } = req.body;
 
   if (!name || !email || !service || !date || !time) {
@@ -174,48 +165,46 @@ app.post("/api/bookings", (req, res) => {
 
   const createdAt = dayjs().format("YYYY-MM-DD HH:mm:ss");
 
-  db.run(
-    `INSERT INTO bookings (client_name, client_email, service, date, time, created_at)
-     VALUES (?, ?, ?, ?, ?, ?)`,
-    [name.trim(), email.trim().toLowerCase(), service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt],
-    async function onInsert(err) {
-      if (err) {
-        if (err.message.includes("UNIQUE constraint failed")) {
-          return res.status(409).json({ error: "Ce creneau est deja reserve." });
-        }
-        return res.status(500).json({ error: "Erreur serveur" });
-      }
+  try {
+    const info = db.prepare(
+      `INSERT INTO bookings (client_name, client_email, service, date, time, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).run(name.trim(), email.trim().toLowerCase(), service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt);
 
-      const booking = {
-        id: this.lastID,
-        client_name: name.trim(),
-        client_email: email.trim().toLowerCase(),
-        service: service.trim(),
-        date: normalizedDate.format("YYYY-MM-DD"),
-        time,
-        created_at: createdAt
-      };
+    const booking = {
+      id: info.lastInsertRowid,
+      client_name: name.trim(),
+      client_email: email.trim().toLowerCase(),
+      service: service.trim(),
+      date: normalizedDate.format("YYYY-MM-DD"),
+      time,
+      created_at: createdAt
+    };
 
-      try {
-        await sendBookingEmails(booking);
-      } catch (mailErr) {
-        console.error("Email error:", mailErr);
-      }
-
-      try {
-        await sendTelegramNotification(booking);
-      } catch (tgErr) {
-        console.error("Telegram error:", tgErr);
-      }
-
-      io.emit("new-booking", booking);
-
-      return res.status(201).json({
-        message: "Rendez-vous enregistre avec succes.",
-        booking
-      });
+    try {
+      await sendBookingEmails(booking);
+    } catch (mailErr) {
+      console.error("Email error:", mailErr);
     }
-  );
+
+    try {
+      await sendTelegramNotification(booking);
+    } catch (tgErr) {
+      console.error("Telegram error:", tgErr);
+    }
+
+    io.emit("new-booking", booking);
+
+    return res.status(201).json({
+      message: "Rendez-vous enregistre avec succes.",
+      booking
+    });
+  } catch (err) {
+    if (err.message && err.message.includes("UNIQUE constraint failed")) {
+      return res.status(409).json({ error: "Ce creneau est deja reserve." });
+    }
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
 });
 
 app.get("/admin", (_, res) => {
