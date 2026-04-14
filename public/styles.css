@@ -18,6 +18,8 @@ body {
   font-family: "Manrope", sans-serif;
   color: var(--ink);
   background:
+    linear-gradient(rgba(15, 17, 20, 0.85), rgba(15, 17, 20, 0.88)),
+    url("images/Horaire.png") center / cover fixed no-repeat,
     radial-gradient(circle at 90% 10%, #2f333a 0%, transparent 35%),
     radial-gradient(circle at 5% 80%, #573b2d 0%, transparent 40%),
     linear-gradient(120deg, var(--bg), var(--bg-2));
@@ -107,7 +109,7 @@ h2 {
 .gallery-grid {
   display: grid;
   gap: 1rem;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 .gallery-card {
@@ -116,6 +118,20 @@ h2 {
   border-radius: 16px;
   overflow: hidden;
   background: #2a3038;
+}
+
+.gallery-card-note {
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  border: 1px solid rgba(236, 230, 221, 0.2);
+  background: rgba(32, 37, 45, 0.85);
+}
+
+.gallery-card-note p {
+  margin: 0;
+  text-align: center;
+  font-weight: 700;
 }
 
 .gallery-card img {
@@ -253,6 +269,10 @@ select {
 }
 
 @media (max-width: 720px) {
+  .gallery-grid {
+    grid-template-columns: 1fr;
+  }
+
   .nav {
     flex-direction: column;
     align-items: flex-start;
