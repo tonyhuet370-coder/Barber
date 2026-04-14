@@ -50,6 +50,12 @@ function getDailySlots() {
   return slots;
 }
 
+function isClosedDay(dateValue) {
+  const day = dayjs(dateValue).day();
+  // Sunday = 0, Monday = 1
+  return day === 0 || day === 1;
+}
+
 function createTransporter() {
   if (!EMAIL_NOTIFICATIONS_ENABLED) {
     return null;
@@ -138,6 +144,15 @@ app.get("/api/availability", (req, res) => {
 
   const allSlots = getDailySlots();
 
+  if (isClosedDay(date)) {
+    return res.json({
+      date,
+      closed: true,
+      message: "Le salon est ferme le dimanche et le lundi.",
+      slots: allSlots.map((time) => ({ time, available: false }))
+    });
+  }
+
   try {
     const rows = db.prepare("SELECT time FROM bookings WHERE date = ?").all(date);
     const booked = new Set(rows.map((r) => r.time));
@@ -174,9 +189,17 @@ app.post("/api/bookings", async (req, res) => {
     return res.status(400).json({ error: "Date invalide." });
   }
 
+  if (isClosedDay(normalizedDate)) {
+    return res.status(400).json({ error: "Le salon est ferme le dimanche et le lundi." });
+  }
+
   const validTime = /^([01]\d|2[0-3]):[0-5]\d$/.test(time);
   if (!validTime) {
     return res.status(400).json({ error: "Heure invalide." });
+  }
+
+  if (!getDailySlots().includes(time)) {
+    return res.status(400).json({ error: "Horaire hors plage d'ouverture (09:00 - 18:00)." });
   }
 
   const createdAt = dayjs().format("YYYY-MM-DD HH:mm:ss");

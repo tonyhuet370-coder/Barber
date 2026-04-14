@@ -3,12 +3,17 @@ const slotsContainer = document.querySelector("#slots");
 const form = document.querySelector("#booking-form");
 const messageEl = document.querySelector("#message");
 const timeInput = document.querySelector("#time");
+const submitButton = form.querySelector("button[type='submit']");
 
 let selectedSlot = "";
 
 function setMessage(text, type = "") {
   messageEl.textContent = text;
   messageEl.className = `message ${type}`.trim();
+}
+
+function updateSubmitState() {
+  submitButton.disabled = !selectedSlot;
 }
 
 function createSlotButton(slot) {
@@ -19,7 +24,7 @@ function createSlotButton(slot) {
   btn.disabled = !slot.available;
 
   if (!slot.available) {
-    btn.title = "Deja reserve";
+    btn.title = "Creneau indisponible";
     return btn;
   }
 
@@ -29,6 +34,7 @@ function createSlotButton(slot) {
 
     document.querySelectorAll(".slot").forEach((el) => el.classList.remove("active"));
     btn.classList.add("active");
+    updateSubmitState();
   });
 
   return btn;
@@ -39,6 +45,7 @@ async function loadAvailability(date) {
   timeInput.value = "";
   slotsContainer.innerHTML = "";
   setMessage("");
+  updateSubmitState();
 
   if (!date) {
     return;
@@ -52,9 +59,18 @@ async function loadAvailability(date) {
       throw new Error(data.error || "Erreur lors du chargement des creneaux.");
     }
 
+    if (data.closed) {
+      setMessage(data.message || "Salon ferme sur cette date.", "error");
+    }
+
     data.slots.forEach((slot) => {
       slotsContainer.appendChild(createSlotButton(slot));
     });
+
+    const hasAvailableSlot = data.slots.some((slot) => slot.available);
+    if (!data.closed && !hasAvailableSlot) {
+      setMessage("Journee complete: plus aucun creneau disponible.", "error");
+    }
   } catch (err) {
     setMessage(err.message, "error");
   }
@@ -97,10 +113,11 @@ form.addEventListener("submit", async (event) => {
       throw new Error(data.error || "Impossible de reserver ce creneau.");
     }
 
-    setMessage("Rendez-vous confirme. Un email de confirmation a ete envoye.", "ok");
+    setMessage("Rendez-vous confirme.", "ok");
     form.reset();
     slotsContainer.innerHTML = "";
     selectedSlot = "";
+    updateSubmitState();
   } catch (err) {
     setMessage(err.message, "error");
   }
@@ -112,3 +129,4 @@ const yyyy = today.getFullYear();
 const mm = String(today.getMonth() + 1).padStart(2, "0");
 const dd = String(today.getDate()).padStart(2, "0");
 dateInput.min = `${yyyy}-${mm}-${dd}`;
+updateSubmitState();
