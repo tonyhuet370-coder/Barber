@@ -4,6 +4,7 @@ const cors = require("cors");
 const nodemailer = require("nodemailer");
 const dayjs = require("dayjs");
 const http = require("http");
+const https = require("https");
 const { Server } = require("socket.io");
 const db = require("./db");
 
@@ -60,6 +61,28 @@ function createTransporter() {
 }
 
 const transporter = createTransporter();
+
+async function sendTelegramNotification(booking) {
+  const token = process.env.TELEGRAM_BOT_TOKEN;
+  const chatId = process.env.TELEGRAM_CHAT_ID;
+
+  if (!token || !chatId) return;
+
+  const text = encodeURIComponent(
+    `🔔 Nouveau rendez-vous!\n👤 ${booking.client_name}\n✂️ ${booking.service}\n📅 ${booking.date} à ${booking.time}\n📧 ${booking.client_email}`
+  );
+
+  return new Promise((resolve) => {
+    const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
+    https.get(url, (res) => {
+      res.resume();
+      res.on("end", resolve);
+    }).on("error", (err) => {
+      console.error("Telegram error:", err.message);
+      resolve();
+    });
+  });
+}
 
 async function sendBookingEmails(booking) {
   const fromAddress = process.env.MAIL_FROM || "noreply@monsalon.com";
@@ -177,6 +200,12 @@ app.post("/api/bookings", (req, res) => {
         await sendBookingEmails(booking);
       } catch (mailErr) {
         console.error("Email error:", mailErr);
+      }
+
+      try {
+        await sendTelegramNotification(booking);
+      } catch (tgErr) {
+        console.error("Telegram error:", tgErr);
       }
 
       io.emit("new-booking", booking);
