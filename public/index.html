@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Barber Shop - Coupe, barbe et style</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <nav class="nav">
+        <div class="logo">Barber Shop</div>
+        <a href="#booking" class="btn-outline">Prendre rendez-vous</a>
+      </nav>
+      <div class="hero-content">
+        <p class="eyebrow">Artisan coiffeur</p>
+        <h1>Un style net, une coupe precise, une barbe soignee.</h1>
+        <p>
+          Bienvenue dans notre salon. Tu peux ajouter tes photos dans le dossier
+          <strong>public/images</strong> avec les noms salon-1.jpg, salon-2.jpg, salon-3.jpg.
+        </p>
+        <a href="#booking" class="btn-primary">Prendre rendez-vous</a>
+      </div>
+      <div class="hero-shape"></div>
+    </header>
+
+    <main>
+      <section class="gallery section">
+        <h2>Le salon</h2>
+        <p class="subtitle">Ajoute ici les images de ton entreprise.</p>
+        <div class="gallery-grid">
+          <div class="gallery-card">
+            <img src="images/salon-1.jpg" alt="Photo du salon 1" loading="lazy" />
+            <div class="fallback">Ajoute public/images/salon-1.jpg</div>
+          </div>
+          <div class="gallery-card">
+            <img src="images/salon-2.jpg" alt="Photo du salon 2" loading="lazy" />
+            <div class="fallback">Ajoute public/images/salon-2.jpg</div>
+          </div>
+          <div class="gallery-card">
+            <img src="images/salon-3.jpg" alt="Photo du salon 3" loading="lazy" />
+            <div class="fallback">Ajoute public/images/salon-3.jpg</div>
+          </div>
+        </div>
+      </section>
+
+      <section id="booking" class="booking section">
+        <h2>Prendre rendez-vous</h2>
+        <p class="subtitle">Selectionne une date pour voir les places disponibles.</p>
+
+        <form id="booking-form" class="booking-form">
+          <div class="field">
+            <label for="name">Nom</label>
+            <input id="name" name="name" type="text" required />
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" required />
+          </div>
+          <div class="field">
+            <label for="service">Service</label>
+            <select id="service" name="service" required>
+              <option value="">Choisir un service</option>
+              <option value="Coupe classique">Coupe classique</option>
+              <option value="Coupe + barbe">Coupe + barbe</option>
+              <option value="Rasage traditionnel">Rasage traditionnel</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="date">Date</label>
+            <input id="date" name="date" type="date" required />
+          </div>
+
+          <div class="slots-wrapper">
+            <p>Horaires disponibles</p>
+            <div id="slots" class="slots"></div>
+          </div>
+
+          <input type="hidden" id="time" name="time" required />
+          <button type="submit" class="btn-primary">Confirmer le rendez-vous</button>
+          <p id="message" class="message"></p>
+        </form>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

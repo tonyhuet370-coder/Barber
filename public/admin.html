@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin - Barber Shop</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
+    <style>
+      :root {
+        --bg: #f7f1e7;
+        --surface: #fffaf3;
+        --ink: #1f1a16;
+        --accent: #b85d2f;
+      }
+
+      body {
+        margin: 0;
+        font-family: "Manrope", sans-serif;
+        color: var(--ink);
+        background: linear-gradient(120deg, #f5e9d8, #f0dfc9);
+      }
+
+      .wrap {
+        max-width: 1000px;
+        margin: 0 auto;
+        padding: 1rem;
+      }
+
+      h1 {
+        font-family: "Oswald", sans-serif;
+      }
+
+      .alert {
+        padding: 0.8rem 1rem;
+        background: #ffe6d9;
+        border-left: 4px solid var(--accent);
+        border-radius: 8px;
+        margin-bottom: 1rem;
+      }
+
+      .card {
+        background: var(--surface);
+        border-radius: 12px;
+        border: 1px solid #d9c5b0;
+        overflow-x: auto;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+
+      th,
+      td {
+        text-align: left;
+        padding: 0.65rem;
+        border-bottom: 1px solid #ecdcca;
+      }
+
+      th {
+        font-size: 0.9rem;
+      }
+
+      .muted {
+        opacity: 0.75;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>Tableau de bord du salon</h1>
+      <p class="muted">Cette page recoit une notification instantanee a chaque nouveau rendez-vous.</p>
+      <div id="alert" class="alert" hidden>Aucune nouvelle notification pour le moment.</div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Heure</th>
+              <th>Client</th>
+              <th>Email</th>
+              <th>Service</th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="admin.js"></script>
+  </body>
+</html>
