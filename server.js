@@ -17,6 +17,15 @@ const io = new Server(server);
 const PORT = process.env.PORT || 3000;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || "boss@monsalon.com";
 
+function hasRealValue(value) {
+  return Boolean(value) && !String(value).includes("COLLE_TON");
+}
+
+const EMAIL_NOTIFICATIONS_ENABLED =
+  hasRealValue(process.env.SMTP_HOST) &&
+  hasRealValue(process.env.SMTP_USER) &&
+  hasRealValue(process.env.SMTP_PASS);
+
 app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
@@ -42,6 +51,10 @@ function getDailySlots() {
 }
 
 function createTransporter() {
+  if (!EMAIL_NOTIFICATIONS_ENABLED) {
+    return null;
+  }
+
   const host = process.env.SMTP_HOST;
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER;
@@ -56,8 +69,7 @@ function createTransporter() {
     });
   }
 
-  // Fallback for local dev: no real email, messages are printed in server logs.
-  return nodemailer.createTransport({ jsonTransport: true });
+  return null;
 }
 
 const transporter = createTransporter();
@@ -85,6 +97,10 @@ async function sendTelegramNotification(booking) {
 }
 
 async function sendBookingEmails(booking) {
+  if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
+    return;
+  }
+
   const fromAddress = process.env.MAIL_FROM || "noreply@monsalon.com";
 
   const clientMail = {
@@ -216,5 +232,8 @@ io.on("connection", () => {
 });
 
 server.listen(PORT, () => {
+  if (!EMAIL_NOTIFICATIONS_ENABLED) {
+    console.log("Email notifications disabled: SMTP is not configured.");
+  }
   console.log(`Server running on http://localhost:${PORT}`);
 });
