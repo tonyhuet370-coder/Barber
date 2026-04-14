@@ -6,6 +6,7 @@ const timeInput = document.querySelector("#time");
 const submitButton = form.querySelector("button[type='submit']");
 
 let selectedSlot = "";
+let availabilityController = null;
 
 function setMessage(text, type = "") {
   messageEl.textContent = text;
@@ -14,6 +15,10 @@ function setMessage(text, type = "") {
 
 function updateSubmitState() {
   submitButton.disabled = !selectedSlot;
+}
+
+function setSlotsLoading(isLoading) {
+  slotsContainer.dataset.loading = isLoading ? "true" : "false";
 }
 
 function createSlotButton(slot) {
@@ -41,6 +46,11 @@ function createSlotButton(slot) {
 }
 
 async function loadAvailability(date) {
+  if (availabilityController) {
+    availabilityController.abort();
+  }
+
+  availabilityController = new AbortController();
   selectedSlot = "";
   timeInput.value = "";
   slotsContainer.innerHTML = "";
@@ -52,7 +62,10 @@ async function loadAvailability(date) {
   }
 
   try {
-    const res = await fetch(`/api/availability?date=${encodeURIComponent(date)}`);
+    setSlotsLoading(true);
+    const res = await fetch(`/api/availability?date=${encodeURIComponent(date)}`, {
+      signal: availabilityController.signal
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -72,7 +85,12 @@ async function loadAvailability(date) {
       setMessage("Journee complete: plus aucun creneau disponible.", "error");
     }
   } catch (err) {
+    if (err.name === "AbortError") {
+      return;
+    }
     setMessage(err.message, "error");
+  } finally {
+    setSlotsLoading(false);
   }
 }
 
