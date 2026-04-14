@@ -19,7 +19,7 @@ body {
   color: var(--ink);
   background:
     linear-gradient(rgba(15, 17, 20, 0.85), rgba(15, 17, 20, 0.88)),
-    url("images/Horaire.png") center / cover fixed no-repeat,
+    url("images/YP_FAMILY.png") center / cover fixed no-repeat,
     radial-gradient(circle at 90% 10%, #2f333a 0%, transparent 35%),
     radial-gradient(circle at 5% 80%, #573b2d 0%, transparent 40%),
     linear-gradient(120deg, var(--bg), var(--bg-2));
