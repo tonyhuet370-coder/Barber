@@ -92,7 +92,7 @@ async function loadExistingBookings() {
   const res = await fetch("/api/bookings");
 
   if (res.status === 401) {
-    window.location.href = "/login.html";
+    window.location.href = "/acces-coiffeur-prive";
     return;
   }
 
@@ -115,7 +115,7 @@ function showNotification(booking) {
 
 logoutBtn.addEventListener("click", async () => {
   await fetch("/api/admin/logout", { method: "POST" });
-  window.location.href = "/login.html";
+  window.location.href = "/acces-coiffeur-prive";
 });
 
 async function init() {

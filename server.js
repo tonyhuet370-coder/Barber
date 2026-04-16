@@ -20,6 +20,7 @@ const OWNER_EMAIL = process.env.OWNER_EMAIL || "boss@monsalon.com";
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "barber2026";
 const SESSION_SECRET = process.env.SESSION_SECRET || "change-this-secret-before-production";
+const ADMIN_LOGIN_PATH = process.env.ADMIN_LOGIN_PATH || "/acces-coiffeur-prive";
 const AUTH_COOKIE_NAME = "barber_admin_auth";
 
 function hasRealValue(value) {
@@ -67,8 +68,16 @@ function requireAdmin(req, res, next) {
     return res.status(401).json({ error: "Authentification requise." });
   }
 
-  return res.redirect("/login.html");
+  return res.redirect(ADMIN_LOGIN_PATH);
 }
+
+app.get(["/login", "/login.html"], (_, res) => {
+  return res.redirect("/");
+});
+
+app.get(ADMIN_LOGIN_PATH, (_, res) => {
+  return res.sendFile(path.join(__dirname, "public", "login.html"));
+});
 
 app.use((req, res, next) => {
   const protectedPaths =
