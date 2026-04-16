@@ -1,4 +1,5 @@
 const path = require("path");
+const crypto = require("crypto");
 const express = require("express");
 const cors = require("cors");
 const nodemailer = require("nodemailer");
@@ -16,6 +17,10 @@ const io = new Server(server);
 
 const PORT = process.env.PORT || 3000;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || "boss@monsalon.com";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "barber2026";
+const SESSION_SECRET = process.env.SESSION_SECRET || "change-this-secret-before-production";
+const AUTH_COOKIE_NAME = "barber_admin_auth";
 
 function hasRealValue(value) {
   return Boolean(value) && !String(value).includes("COLLE_TON");
@@ -28,6 +33,59 @@ const EMAIL_NOTIFICATIONS_ENABLED =
 
 app.use(cors());
 app.use(express.json());
+
+function parseCookies(cookieHeader = "") {
+  return cookieHeader
+    .split(";")
+    .map((part) => part.trim())
+    .filter(Boolean)
+    .reduce((acc, part) => {
+      const index = part.indexOf("=");
+      if (index === -1) return acc;
+      const key = part.slice(0, index);
+      const value = decodeURIComponent(part.slice(index + 1));
+      acc[key] = value;
+      return acc;
+    }, {});
+}
+
+function buildAdminToken() {
+  return crypto.createHmac("sha256", SESSION_SECRET).update(`${ADMIN_USERNAME}:${ADMIN_PASSWORD}`).digest("hex");
+}
+
+function isAuthenticated(req) {
+  const cookies = parseCookies(req.headers.cookie || "");
+  return cookies[AUTH_COOKIE_NAME] === buildAdminToken();
+}
+
+function requireAdmin(req, res, next) {
+  if (isAuthenticated(req)) {
+    return next();
+  }
+
+  if (req.path.startsWith("/api/")) {
+    return res.status(401).json({ error: "Authentification requise." });
+  }
+
+  return res.redirect("/login.html");
+}
+
+app.use((req, res, next) => {
+  const protectedPaths =
+    req.path === "/admin" ||
+    req.path === "/admin.html" ||
+    req.path === "/admin.js" ||
+    (req.path === "/api/bookings" && req.method === "GET") ||
+    (req.path.startsWith("/api/bookings/") && req.method === "PATCH") ||
+    req.path.startsWith("/api/admin/logout");
+
+  if (!protectedPaths) {
+    return next();
+  }
+
+  return requireAdmin(req, res, next);
+});
+
 app.use(express.static(path.join(__dirname, "public")));
 
 function getDailySlots() {
@@ -166,12 +224,58 @@ app.get("/api/availability", (req, res) => {
   }
 });
 
-app.get("/api/bookings", (_, res) => {
+app.post("/api/admin/login", (req, res) => {
+  const { username, password } = req.body;
+
+  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: "Identifiants invalides." });
+  }
+
+  res.setHeader(
+    "Set-Cookie",
+    `${AUTH_COOKIE_NAME}=${buildAdminToken()}; HttpOnly; Path=/; SameSite=Lax; Max-Age=604800`
+  );
+
+  return res.json({ success: true });
+});
+
+app.post("/api/admin/logout", requireAdmin, (_, res) => {
+  res.setHeader(
+    "Set-Cookie",
+    `${AUTH_COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`
+  );
+
+  return res.json({ success: true });
+});
+
+app.get("/api/bookings", requireAdmin, (_, res) => {
   try {
     const rows = db.prepare(
-      "SELECT id, client_name, client_email, service, date, time, created_at FROM bookings ORDER BY date ASC, time ASC"
+      "SELECT id, client_name, client_email, service, date, time, created_at, COALESCE(status, 'Confirme') as status FROM bookings ORDER BY date ASC, time ASC"
     ).all();
     return res.json({ bookings: rows });
+  } catch (err) {
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.patch("/api/bookings/:id/status", requireAdmin, (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const allowedStatuses = ["Confirme", "Termine", "Annule"];
+
+  if (!allowedStatuses.includes(status)) {
+    return res.status(400).json({ error: "Statut invalide." });
+  }
+
+  try {
+    const result = db.prepare("UPDATE bookings SET status = ? WHERE id = ?").run(status, id);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Rendez-vous introuvable." });
+    }
+
+    return res.json({ success: true });
   } catch (err) {
     return res.status(500).json({ error: "Erreur serveur" });
   }
@@ -217,7 +321,8 @@ app.post("/api/bookings", async (req, res) => {
       service: service.trim(),
       date: normalizedDate.format("YYYY-MM-DD"),
       time,
-      created_at: createdAt
+      created_at: createdAt,
+      status: "Confirme"
     };
 
     try {

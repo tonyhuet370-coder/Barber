@@ -17,4 +17,10 @@ db.exec(`
   )
 `);
 
+try {
+  db.exec("ALTER TABLE bookings ADD COLUMN status TEXT DEFAULT 'Confirme'");
+} catch {
+  // Column already exists.
+}
+
 module.exports = db;
