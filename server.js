@@ -116,7 +116,10 @@ app.use((req, res, next) => {
   return requireAdmin(req, res, next);
 });
 
-app.use(express.static(path.join(__dirname, "public")));
+app.use(express.static(path.join(__dirname, "public"), {
+  etag: true,
+  maxAge: "7d"
+}));
 
 function getDailySlots() {
   const slots = [];

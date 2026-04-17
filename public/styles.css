@@ -24,12 +24,11 @@ body {
   font-family: "Manrope", sans-serif;
   color: var(--ink);
   background:
-    linear-gradient(rgba(11, 13, 17, 0.8), rgba(11, 13, 17, 0.93)),
-    url("images/YP_FAMILY.png") center / cover no-repeat,
+    linear-gradient(rgba(11, 13, 17, 0.88), rgba(11, 13, 17, 0.96)),
     radial-gradient(circle at 90% 10%, #313742 0%, transparent 35%),
     radial-gradient(circle at 5% 80%, #6a422f 0%, transparent 40%),
     linear-gradient(120deg, var(--bg), var(--bg-2));
-  background-attachment: scroll, fixed, scroll, scroll;
+  background-attachment: scroll;
   min-height: 100vh;
 }
 
@@ -59,14 +58,12 @@ body {
   margin: 3rem auto 0;
   position: relative;
   z-index: 2;
-  animation: fadeUp 700ms ease;
-  background: rgba(12, 14, 18, 0.55);
-  border: 1px solid rgba(236, 230, 221, 0.18);
-  backdrop-filter: blur(6px);
+  animation: fadeUp 420ms ease;
+  background: rgba(12, 14, 18, 0.76);
+  border: 1px solid rgba(236, 230, 221, 0.14);
   border-radius: 18px;
   padding: 1.2rem;
-  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
-  will-change: transform, opacity;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
 .eyebrow {
@@ -119,11 +116,12 @@ h2 {
 
 .gallery.section,
 .booking.section {
-  background: rgba(18, 22, 28, 0.72);
-  border: 1px solid rgba(236, 230, 221, 0.15);
+  background: rgba(18, 22, 28, 0.82);
+  border: 1px solid rgba(236, 230, 221, 0.12);
   border-radius: 20px;
-  backdrop-filter: blur(4px);
-  box-shadow: 0 18px 38px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 12px 26px rgba(0, 0, 0, 0.22);
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 700px;
 }
 
 .subtitle {
@@ -140,12 +138,13 @@ h2 {
 .gallery-card {
   position: relative;
   min-height: 240px;
+  aspect-ratio: 4 / 3;
   border-radius: 16px;
   overflow: hidden;
   background: #2a3038;
   border: 1px solid rgba(236, 230, 221, 0.12);
-  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.25);
-  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 180ms ease;
+  box-shadow: 0 8px 18px rgba(0, 0, 0, 0.22);
+  transition: transform 140ms cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 140ms ease;
 }
 
 .gallery-card:hover {
@@ -198,7 +197,6 @@ h2 {
   display: grid;
   gap: 0.9rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  will-change: transform;
 }
 
 .field {
@@ -281,7 +279,6 @@ select:focus {
   padding: 0.75rem 1rem;
   font-weight: 700;
   transition: transform 150ms ease, filter 150ms ease;
-  will-change: transform;
 }
 
 .btn-primary {
@@ -341,9 +338,20 @@ select:focus {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
 @media (max-width: 720px) {
   body {
-    background-attachment: scroll, scroll, scroll, scroll;
+    background-attachment: scroll;
   }
 
   .booking-form {
