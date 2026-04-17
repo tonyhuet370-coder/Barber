@@ -4,7 +4,8 @@
   "description": "Site vitrine et prise de rendez-vous pour coiffeur",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "admin:hash": "node scripts/generate-admin-hash.js"
   },
   "license": "MIT",
   "dependencies": {

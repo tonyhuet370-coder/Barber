@@ -19,9 +19,11 @@ const PORT = process.env.PORT || 3000;
 const OWNER_EMAIL = process.env.OWNER_EMAIL || "boss@monsalon.com";
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "admin";
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "barber2026";
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
 const SESSION_SECRET = process.env.SESSION_SECRET || "change-this-secret-before-production";
 const ADMIN_LOGIN_PATH = process.env.ADMIN_LOGIN_PATH || "/acces-coiffeur-prive";
 const AUTH_COOKIE_NAME = "barber_admin_auth";
+const ADMIN_TOKEN_SECRET = ADMIN_PASSWORD_HASH || ADMIN_PASSWORD;
 
 function hasRealValue(value) {
   return Boolean(value) && !String(value).includes("COLLE_TON");
@@ -50,8 +52,27 @@ function parseCookies(cookieHeader = "") {
     }, {});
 }
 
+function verifyAdminPassword(password = "") {
+  if (ADMIN_PASSWORD_HASH) {
+    try {
+      const [salt, storedKey] = ADMIN_PASSWORD_HASH.split(":");
+
+      if (!salt || !storedKey) {
+        return false;
+      }
+
+      const derivedKey = crypto.scryptSync(password, salt, Buffer.from(storedKey, "hex").length);
+      return crypto.timingSafeEqual(Buffer.from(storedKey, "hex"), derivedKey);
+    } catch {
+      return false;
+    }
+  }
+
+  return password === ADMIN_PASSWORD;
+}
+
 function buildAdminToken() {
-  return crypto.createHmac("sha256", SESSION_SECRET).update(`${ADMIN_USERNAME}:${ADMIN_PASSWORD}`).digest("hex");
+  return crypto.createHmac("sha256", SESSION_SECRET).update(`${ADMIN_USERNAME}:${ADMIN_TOKEN_SECRET}`).digest("hex");
 }
 
 function isAuthenticated(req) {
@@ -236,7 +257,7 @@ app.get("/api/availability", (req, res) => {
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body;
 
-  if (username !== ADMIN_USERNAME || password !== ADMIN_PASSWORD) {
+  if (username !== ADMIN_USERNAME || !verifyAdminPassword(password)) {
     return res.status(401).json({ error: "Identifiants invalides." });
   }
 
