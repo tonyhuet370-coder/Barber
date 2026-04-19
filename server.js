@@ -22,8 +22,9 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || "barber2026";
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
 const SESSION_SECRET = process.env.SESSION_SECRET || "change-this-secret-before-production";
 const ADMIN_LOGIN_PATH = process.env.ADMIN_LOGIN_PATH || "/acces-coiffeur-prive";
+const ADMIN_RESET_CODE = process.env.ADMIN_RESET_CODE || "";
+const ADMIN_RESET_CODE_HASH = process.env.ADMIN_RESET_CODE_HASH || "";
 const AUTH_COOKIE_NAME = "barber_admin_auth";
-const ADMIN_TOKEN_SECRET = ADMIN_PASSWORD_HASH || ADMIN_PASSWORD;
 
 function hasRealValue(value) {
   return Boolean(value) && !String(value).includes("COLLE_TON");
@@ -52,27 +53,65 @@ function parseCookies(cookieHeader = "") {
     }, {});
 }
 
-function verifyAdminPassword(password = "") {
-  if (ADMIN_PASSWORD_HASH) {
-    try {
-      const [salt, storedKey] = ADMIN_PASSWORD_HASH.split(":");
+function hashSecret(secret, salt = crypto.randomBytes(16).toString("hex")) {
+  const hash = crypto.scryptSync(secret, salt, 64).toString("hex");
+  return `${salt}:${hash}`;
+}
 
-      if (!salt || !storedKey) {
-        return false;
-      }
-
-      const derivedKey = crypto.scryptSync(password, salt, Buffer.from(storedKey, "hex").length);
-      return crypto.timingSafeEqual(Buffer.from(storedKey, "hex"), derivedKey);
-    } catch {
-      return false;
-    }
+function verifySecret(secret = "", storedValue = "") {
+  if (!storedValue) {
+    return false;
   }
 
-  return password === ADMIN_PASSWORD;
+  if (!storedValue.includes(":")) {
+    return secret === storedValue;
+  }
+
+  try {
+    const [salt, storedKey] = storedValue.split(":");
+
+    if (!salt || !storedKey) {
+      return false;
+    }
+
+    const derivedKey = crypto.scryptSync(secret, salt, Buffer.from(storedKey, "hex").length);
+    return crypto.timingSafeEqual(Buffer.from(storedKey, "hex"), derivedKey);
+  } catch {
+    return false;
+  }
+}
+
+function getDefaultPasswordHash() {
+  return ADMIN_PASSWORD_HASH || hashSecret(ADMIN_PASSWORD);
+}
+
+function ensureAdminSettings() {
+  const existing = db.prepare("SELECT username, password_hash FROM admin_settings WHERE id = 1").get();
+
+  if (!existing) {
+    db.prepare(
+      "INSERT INTO admin_settings (id, username, password_hash, updated_at) VALUES (1, ?, ?, ?)"
+    ).run(ADMIN_USERNAME, getDefaultPasswordHash(), dayjs().format("YYYY-MM-DD HH:mm:ss"));
+  }
+}
+
+function getAdminSettings() {
+  ensureAdminSettings();
+  return db.prepare("SELECT username, password_hash FROM admin_settings WHERE id = 1").get();
+}
+
+function verifyAdminPassword(username = "", password = "") {
+  const adminSettings = getAdminSettings();
+  return username === adminSettings.username && verifySecret(password, adminSettings.password_hash);
+}
+
+function getResetSecret() {
+  return ADMIN_RESET_CODE_HASH || ADMIN_RESET_CODE || SESSION_SECRET;
 }
 
 function buildAdminToken() {
-  return crypto.createHmac("sha256", SESSION_SECRET).update(`${ADMIN_USERNAME}:${ADMIN_TOKEN_SECRET}`).digest("hex");
+  const adminSettings = getAdminSettings();
+  return crypto.createHmac("sha256", SESSION_SECRET).update(`${adminSettings.username}:${adminSettings.password_hash}`).digest("hex");
 }
 
 function isAuthenticated(req) {
@@ -280,7 +319,7 @@ app.get("/api/availability", (req, res) => {
 app.post("/api/admin/login", (req, res) => {
   const { username, password } = req.body;
 
-  if (username !== ADMIN_USERNAME || !verifyAdminPassword(password)) {
+  if (!verifyAdminPassword(String(username || "").trim(), String(password || ""))) {
     return res.status(401).json({ error: "Identifiants invalides." });
   }
 
@@ -299,6 +338,39 @@ app.post("/api/admin/logout", requireAdmin, (_, res) => {
   );
 
   return res.json({ success: true });
+});
+
+app.post("/api/admin/reset-credentials", (req, res) => {
+  const { resetCode, username, password } = req.body;
+  const nextUsername = String(username || "").trim();
+  const nextPassword = String(password || "").trim();
+
+  if (!resetCode || !nextUsername || !nextPassword) {
+    return res.status(400).json({ error: "Tous les champs sont obligatoires." });
+  }
+
+  if (nextUsername.length < 3) {
+    return res.status(400).json({ error: "L'identifiant doit contenir au moins 3 caracteres." });
+  }
+
+  if (nextPassword.length < 8) {
+    return res.status(400).json({ error: "Le mot de passe doit contenir au moins 8 caracteres." });
+  }
+
+  if (!verifySecret(String(resetCode), getResetSecret())) {
+    return res.status(401).json({ error: "Code de recuperation invalide." });
+  }
+
+  db.prepare(
+    "INSERT INTO admin_settings (id, username, password_hash, updated_at) VALUES (1, ?, ?, ?) ON CONFLICT(id) DO UPDATE SET username = excluded.username, password_hash = excluded.password_hash, updated_at = excluded.updated_at"
+  ).run(nextUsername, hashSecret(nextPassword), dayjs().format("YYYY-MM-DD HH:mm:ss"));
+
+  res.setHeader(
+    "Set-Cookie",
+    `${AUTH_COOKIE_NAME}=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0`
+  );
+
+  return res.json({ success: true, message: "Identifiants admin mis a jour avec succes." });
 });
 
 app.get("/api/bookings", requireAdmin, (_, res) => {

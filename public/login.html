@@ -54,6 +54,22 @@
         gap: 0.85rem;
       }
 
+      .toggle-link {
+        border: 0;
+        background: transparent !important;
+        color: #d6a07d !important;
+        box-shadow: none !important;
+        cursor: pointer;
+        padding: 0;
+        text-align: left;
+        font: inherit;
+        font-weight: 700;
+      }
+
+      .panel[hidden] {
+        display: none;
+      }
+
       label {
         display: grid;
         gap: 0.35rem;
@@ -92,7 +108,7 @@
       <h1>Connexion admin</h1>
       <p>Acces reserve au coiffeur pour gerer les rendez-vous.</p>
 
-      <form id="login-form">
+      <form id="login-form" class="panel">
         <label>
           Identifiant
           <input id="username" name="username" type="text" placeholder="admin" required />
@@ -104,13 +120,51 @@
         </label>
 
         <button type="submit">Se connecter</button>
+        <button type="button" id="show-reset" class="toggle-link">Identifiants oubliés ?</button>
         <p id="message" class="message"></p>
+      </form>
+
+      <form id="reset-form" class="panel" hidden>
+        <label>
+          Code de récupération
+          <input id="resetCode" name="resetCode" type="password" placeholder="Code secret" required />
+        </label>
+
+        <label>
+          Nouvel identifiant
+          <input id="newUsername" name="newUsername" type="text" placeholder="nouvel identifiant" required />
+        </label>
+
+        <label>
+          Nouveau mot de passe
+          <input id="newPassword" name="newPassword" type="password" placeholder="minimum 8 caractères" required />
+        </label>
+
+        <button type="submit">Renouveler les accès</button>
+        <button type="button" id="show-login" class="toggle-link">Retour à la connexion</button>
+        <p id="reset-message" class="message"></p>
       </form>
     </div>
 
     <script>
       const form = document.querySelector("#login-form");
+      const resetForm = document.querySelector("#reset-form");
+      const showResetBtn = document.querySelector("#show-reset");
+      const showLoginBtn = document.querySelector("#show-login");
       const messageEl = document.querySelector("#message");
+      const resetMessageEl = document.querySelector("#reset-message");
+
+      function showPanel(type) {
+        const loginMode = type === "login";
+        form.hidden = !loginMode;
+        resetForm.hidden = loginMode;
+        messageEl.textContent = "";
+        resetMessageEl.textContent = "";
+        resetMessageEl.style.color = "";
+      }
+
+      showResetBtn.addEventListener("click", () => showPanel("reset"));
+      showLoginBtn.addEventListener("click", () => showPanel("login"));
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -138,6 +192,39 @@
         }
 
         window.location.href = "/admin";
+      });
+
+      resetForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        resetMessageEl.textContent = "";
+
+        const formData = new FormData(resetForm);
+        const payload = {
+          resetCode: formData.get("resetCode"),
+          username: formData.get("newUsername"),
+          password: formData.get("newPassword")
+        };
+
+        const res = await fetch("/api/admin/reset-credentials", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          resetMessageEl.style.color = "";
+          resetMessageEl.textContent = data.error || "Renouvellement impossible.";
+          return;
+        }
+
+        resetMessageEl.style.color = "#8fe3b1";
+        resetMessageEl.textContent = data.message || "Identifiants mis à jour.";
+        resetForm.reset();
+        setTimeout(() => showPanel("login"), 1200);
       });
     </script>
   </body>
