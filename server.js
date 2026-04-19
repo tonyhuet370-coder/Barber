@@ -154,6 +154,10 @@ function isClosedDay(dateValue) {
   return day === 0 || day === 1;
 }
 
+function isSameDayBooking(dateValue) {
+  return dayjs(dateValue).format("YYYY-MM-DD") === dayjs().format("YYYY-MM-DD");
+}
+
 function createTransporter() {
   if (!EMAIL_NOTIFICATIONS_ENABLED) {
     return null;
@@ -241,6 +245,15 @@ app.get("/api/availability", (req, res) => {
   }
 
   const allSlots = getDailySlots();
+
+  if (isSameDayBooking(date)) {
+    return res.json({
+      date,
+      closed: true,
+      message: "Les reservations pour aujourd'hui sont fermees. Merci de choisir un autre jour.",
+      slots: allSlots.map((time) => ({ time, available: false }))
+    });
+  }
 
   if (isClosedDay(date)) {
     return res.json({
@@ -331,6 +344,10 @@ app.post("/api/bookings", async (req, res) => {
   const normalizedDate = dayjs(date, "YYYY-MM-DD", true);
   if (!normalizedDate.isValid()) {
     return res.status(400).json({ error: "Date invalide." });
+  }
+
+  if (isSameDayBooking(normalizedDate)) {
+    return res.status(400).json({ error: "Les reservations pour aujourd'hui sont fermees. Merci de choisir un autre jour." });
   }
 
   if (isClosedDay(normalizedDate)) {
