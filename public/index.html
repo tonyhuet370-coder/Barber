@@ -11,25 +11,99 @@
   </head>
   <body>
     <header class="hero">
-      <nav class="nav">
-        <div class="logo">Barber Shop</div>
-       
-      </nav>
-      <div class="hero-content">
-        <p class="eyebrow">Artisan coiffeur</p>
-        <h1>Un style net, une coupe precise, une barbe soignee.</h1>
-        <p>
-          Bienvenue dans notre salon. Reserve ton creneau en ligne en quelques clics.
-        </p>
-        <a href="#booking" class="btn-primary">Prendre rendez-vous</a>
+      <div class="hero-shell">
+        <span class="shape shape-1"></span>
+        <span class="shape shape-2"></span>
+        <span class="shape shape-3"></span>
+
+        <nav class="nav">
+          <div class="brand">
+            <span class="brand-mark">B</span>
+            <div>
+              <div class="logo">Barber Shop</div>
+              <p>Coupe, barbe et style</p>
+            </div>
+          </div>
+
+          <div class="nav-links">
+            <a href="#salon">Le salon</a>
+            <a href="#booking" class="btn-outline">Réserver</a>
+          </div>
+        </nav>
+
+        <div class="hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Élégance moderne · réservation simple</p>
+            <h1>Un salon lumineux, premium et pensé pour une expérience fluide.</h1>
+            <p class="lead">
+              Réserve ton créneau en ligne en quelques secondes et profite d’un service propre,
+              précis et professionnel dans une ambiance haut de gamme.
+            </p>
+
+            <div class="cta-row">
+              <a href="#booking" class="btn-primary">Prendre rendez-vous</a>
+              <a href="#salon" class="btn-ghost">Découvrir le salon</a>
+            </div>
+
+            <div class="hero-tags">
+              <span>Créneaux visibles</span>
+              <span>Réservation rapide</span>
+              <span>Style premium</span>
+            </div>
+          </div>
+
+          <aside class="hero-card">
+            <span class="card-kicker">Réservation express</span>
+            <h3>Un parcours clair et moderne.</h3>
+            <ul class="feature-list">
+              <li>Choix du service et de la date</li>
+              <li>Horaires réellement disponibles</li>
+              <li>Confirmation immédiate</li>
+            </ul>
+
+            <div class="mini-stats">
+              <div>
+                <strong>09:00 → 18:00</strong>
+                <span>Créneaux</span>
+              </div>
+              <div>
+                <strong>Mar. → Sam.</strong>
+                <span>Ouverture</span>
+              </div>
+            </div>
+          </aside>
+        </div>
       </div>
-      <div class="hero-shape"></div>
     </header>
 
     <main>
-      <section class="gallery section">
-        <h2>Le salon</h2>
-        <p class="subtitle">Decouvre l'ambiance du salon.</p>
+      <section class="highlights section">
+        <article class="info-card">
+          <span class="info-icon">✂️</span>
+          <h3>Style précis</h3>
+          <p>Des coupes nettes, une finition soignée et une identité visuelle plus premium.</p>
+        </article>
+        <article class="info-card">
+          <span class="info-icon">⏱️</span>
+          <h3>Réservation fluide</h3>
+          <p>Un parcours simple, rapide et clair sur mobile comme sur ordinateur.</p>
+        </article>
+        <article class="info-card">
+          <span class="info-icon">⭐</span>
+          <h3>Image pro</h3>
+          <p>Une présence en ligne moderne pour inspirer confiance dès la première visite.</p>
+        </article>
+      </section>
+
+      <section id="salon" class="gallery section">
+        <div class="section-head">
+          <div>
+            <p class="eyebrow">L’ambiance du salon</p>
+            <h2>Un univers propre, élégant et accueillant.</h2>
+          </div>
+          <p class="subtitle">Quelques visuels pour découvrir le lieu et l’identité du barber shop.</p>
+        </div>
+
         <div class="gallery-grid">
           <div class="gallery-card">
             <img src="images/entreprise.png" alt="Photo de l'entreprise" loading="lazy" decoding="async" />
@@ -44,41 +118,53 @@
       </section>
 
       <section id="booking" class="booking section">
-        <h2>Prendre rendez-vous</h2>
-        <p class="subtitle">Selectionne une date pour voir les places disponibles.</p>
+        <div class="booking-layout">
+          <div class="booking-copy">
+            <p class="eyebrow">Prise de rendez-vous</p>
+            <h2>Réserve ton créneau en ligne.</h2>
+            <p class="subtitle">
+              Choisis ta prestation, sélectionne une date et vois instantanément les disponibilités.
+            </p>
 
-        <form id="booking-form" class="booking-form">
-          <div class="field">
-            <label for="name">Nom</label>
-            <input id="name" name="name" type="text" required />
-          </div>
-          <div class="field">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" required />
-          </div>
-          <div class="field">
-            <label for="service">Service</label>
-            <select id="service" name="service" required>
-              <option value="">Choisir un service</option>
-              <option value="Coupe classique">Coupe classique</option>
-              <option value="Coupe + barbe">Coupe + barbe</option>
-              <option value="Rasage traditionnel">Rasage traditionnel</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="date">Date</label>
-            <input id="date" name="date" type="date" required />
+            <div class="booking-note">
+              <strong>Infos utiles</strong>
+              <p>Le salon accueille sur rendez-vous du mardi au samedi, de 09:00 à 18:00.</p>
+            </div>
           </div>
 
-          <div class="slots-wrapper">
-            <p>Horaires disponibles</p>
-            <div id="slots" class="slots"></div>
-          </div>
+          <form id="booking-form" class="booking-form">
+            <div class="field">
+              <label for="name">Nom</label>
+              <input id="name" name="name" type="text" required />
+            </div>
+            <div class="field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" required />
+            </div>
+            <div class="field">
+              <label for="service">Service</label>
+              <select id="service" name="service" required>
+                <option value="">Choisir un service</option>
+                <option value="Coupe classique">Coupe classique</option>
+                <option value="Coupe + barbe">Coupe + barbe</option>
+                <option value="Rasage traditionnel">Rasage traditionnel</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="date">Date</label>
+              <input id="date" name="date" type="date" required />
+            </div>
 
-          <input type="hidden" id="time" name="time" required />
-          <button type="submit" class="btn-primary">Confirmer le rendez-vous</button>
-          <p id="message" class="message"></p>
-        </form>
+            <div class="slots-wrapper">
+              <p>Horaires disponibles</p>
+              <div id="slots" class="slots"></div>
+            </div>
+
+            <input type="hidden" id="time" name="time" required />
+            <button type="submit" class="btn-primary">Confirmer le rendez-vous</button>
+            <p id="message" class="message"></p>
+          </form>
+        </div>
       </section>
     </main>
 
