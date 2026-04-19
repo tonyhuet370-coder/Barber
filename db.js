@@ -26,6 +26,17 @@ db.exec(`
   )
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS admin_reset_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    email TEXT NOT NULL,
+    code_hash TEXT NOT NULL,
+    expires_at TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    used_at TEXT
+  )
+`);
+
 try {
   db.exec("ALTER TABLE bookings ADD COLUMN status TEXT DEFAULT 'Confirme'");
 } catch {

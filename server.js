@@ -109,6 +109,49 @@ function getResetSecret() {
   return ADMIN_RESET_CODE_HASH || ADMIN_RESET_CODE || SESSION_SECRET;
 }
 
+function verifyAndConsumeResetCode(email = "", code = "") {
+  if (verifySecret(code, getResetSecret())) {
+    return true;
+  }
+
+  const record = db.prepare(
+    "SELECT id, code_hash, expires_at FROM admin_reset_tokens WHERE email = ? AND used_at IS NULL ORDER BY created_at DESC LIMIT 1"
+  ).get(email);
+
+  if (!record) {
+    return false;
+  }
+
+  if (dayjs(record.expires_at).isBefore(dayjs())) {
+    return false;
+  }
+
+  if (!verifySecret(code, record.code_hash)) {
+    return false;
+  }
+
+  db.prepare("UPDATE admin_reset_tokens SET used_at = ? WHERE id = ?")
+    .run(dayjs().format("YYYY-MM-DD HH:mm:ss"), record.id);
+
+  return true;
+}
+
+async function sendAdminResetCode(email, code) {
+  if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
+    throw new Error("La recuperation par email n'est pas configuree.");
+  }
+
+  const fromAddress = process.env.MAIL_FROM || "noreply@monsalon.com";
+
+  await transporter.sendMail({
+    from: fromAddress,
+    to: email,
+    subject: "Code de recuperation admin",
+    text:
+      `Bonjour,\n\nVoici votre code de recuperation pour l'espace admin : ${code}\n\nCe code expire dans 15 minutes.\n\nSi vous n'etes pas a l'origine de cette demande, ignorez cet email.`
+  });
+}
+
 function buildAdminToken() {
   const adminSettings = getAdminSettings();
   return crypto.createHmac("sha256", SESSION_SECRET).update(`${adminSettings.username}:${adminSettings.password_hash}`).digest("hex");
@@ -340,12 +383,50 @@ app.post("/api/admin/logout", requireAdmin, (_, res) => {
   return res.json({ success: true });
 });
 
+app.post("/api/admin/request-reset-code", async (req, res) => {
+  const email = String(req.body.email || "").trim().toLowerCase();
+  const ownerEmail = String(OWNER_EMAIL || "").trim().toLowerCase();
+
+  if (!email) {
+    return res.status(400).json({ error: "L'adresse email est obligatoire." });
+  }
+
+  if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
+    return res.status(503).json({ error: "La recuperation par email n'est pas configuree pour le moment." });
+  }
+
+  const genericMessage = "Si l'adresse correspond au compte admin, un code a ete envoye par email.";
+
+  if (email !== ownerEmail) {
+    return res.json({ success: true, message: genericMessage });
+  }
+
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  const createdAt = dayjs().format("YYYY-MM-DD HH:mm:ss");
+  const expiresAt = dayjs().add(15, "minute").format("YYYY-MM-DD HH:mm:ss");
+
+  db.prepare("DELETE FROM admin_reset_tokens WHERE email = ? OR expires_at < ?")
+    .run(email, createdAt);
+
+  db.prepare(
+    "INSERT INTO admin_reset_tokens (email, code_hash, expires_at, created_at) VALUES (?, ?, ?, ?)"
+  ).run(email, hashSecret(code), expiresAt, createdAt);
+
+  try {
+    await sendAdminResetCode(email, code);
+    return res.json({ success: true, message: genericMessage });
+  } catch (err) {
+    return res.status(500).json({ error: err.message || "Impossible d'envoyer le code par email." });
+  }
+});
+
 app.post("/api/admin/reset-credentials", (req, res) => {
-  const { resetCode, username, password } = req.body;
+  const { email, resetCode, username, password } = req.body;
+  const normalizedEmail = String(email || "").trim().toLowerCase();
   const nextUsername = String(username || "").trim();
   const nextPassword = String(password || "").trim();
 
-  if (!resetCode || !nextUsername || !nextPassword) {
+  if (!normalizedEmail || !resetCode || !nextUsername || !nextPassword) {
     return res.status(400).json({ error: "Tous les champs sont obligatoires." });
   }
 
@@ -357,8 +438,8 @@ app.post("/api/admin/reset-credentials", (req, res) => {
     return res.status(400).json({ error: "Le mot de passe doit contenir au moins 8 caracteres." });
   }
 
-  if (!verifySecret(String(resetCode), getResetSecret())) {
-    return res.status(401).json({ error: "Code de recuperation invalide." });
+  if (!verifyAndConsumeResetCode(normalizedEmail, String(resetCode))) {
+    return res.status(401).json({ error: "Code de recuperation invalide ou expire." });
   }
 
   db.prepare(

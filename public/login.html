@@ -126,8 +126,15 @@
 
       <form id="reset-form" class="panel" hidden>
         <label>
+          Email du salon
+          <input id="resetEmail" name="resetEmail" type="email" placeholder="email du coiffeur" required />
+        </label>
+
+        <button type="button" id="send-reset-code">Recevoir un code par email</button>
+
+        <label>
           Code de récupération
-          <input id="resetCode" name="resetCode" type="password" placeholder="Code secret" required />
+          <input id="resetCode" name="resetCode" type="password" placeholder="Code reçu par email" required />
         </label>
 
         <label>
@@ -151,6 +158,7 @@
       const resetForm = document.querySelector("#reset-form");
       const showResetBtn = document.querySelector("#show-reset");
       const showLoginBtn = document.querySelector("#show-login");
+      const sendResetCodeBtn = document.querySelector("#send-reset-code");
       const messageEl = document.querySelector("#message");
       const resetMessageEl = document.querySelector("#reset-message");
 
@@ -165,6 +173,28 @@
 
       showResetBtn.addEventListener("click", () => showPanel("reset"));
       showLoginBtn.addEventListener("click", () => showPanel("login"));
+
+      sendResetCodeBtn.addEventListener("click", async () => {
+        resetMessageEl.style.color = "";
+        const email = document.querySelector("#resetEmail").value.trim();
+
+        if (!email) {
+          resetMessageEl.textContent = "Entre l'adresse email du salon.";
+          return;
+        }
+
+        const res = await fetch("/api/admin/request-reset-code", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({ email })
+        });
+
+        const data = await res.json();
+        resetMessageEl.style.color = res.ok ? "#8fe3b1" : "";
+        resetMessageEl.textContent = data.message || data.error || "Impossible d'envoyer le code.";
+      });
 
       form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -200,6 +230,7 @@
 
         const formData = new FormData(resetForm);
         const payload = {
+          email: formData.get("resetEmail"),
           resetCode: formData.get("resetCode"),
           username: formData.get("newUsername"),
           password: formData.get("newPassword")
