@@ -118,7 +118,14 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, "public"), {
   etag: true,
-  maxAge: "7d"
+  setHeaders: (res, filePath) => {
+    if (/\.(html|css|js)$/i.test(filePath)) {
+      res.setHeader("Cache-Control", "no-store");
+      return;
+    }
+
+    res.setHeader("Cache-Control", "public, max-age=604800");
+  }
 }));
 
 function getDailySlots() {
