@@ -466,6 +466,19 @@ app.get("/api/bookings", requireAdmin, (_, res) => {
 });
 
 app.patch("/api/bookings/:id/status", requireAdmin, (req, res) => {
+  // Supprimer un rendez-vous
+  app.delete("/api/bookings/:id", requireAdmin, (req, res) => {
+    const { id } = req.params;
+    try {
+      const result = db.prepare("DELETE FROM bookings WHERE id = ?").run(id);
+      if (result.changes === 0) {
+        return res.status(404).json({ error: "Rendez-vous introuvable." });
+      }
+      return res.json({ success: true });
+    } catch (err) {
+      return res.status(500).json({ error: "Erreur serveur" });
+    }
+  });
   const { id } = req.params;
   const { status } = req.body;
   const allowedStatuses = ["Confirme", "Termine", "Annule"];

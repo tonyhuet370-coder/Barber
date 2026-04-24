@@ -51,21 +51,58 @@ function renderBooking(booking, prepend = false) {
   const actions = document.createElement("div");
   actions.className = "actions";
 
-  ["Confirme", "Termine", "Annule"].forEach((status) => {
-    const btn = document.createElement("button");
-    btn.className = "btn-secondary";
-    btn.textContent = status;
-    btn.addEventListener("click", async () => {
-      try {
-        await updateBookingStatus(booking.id, status);
-        await loadExistingBookings();
-      } catch (err) {
-        alertEl.hidden = false;
-        alertEl.textContent = err.message;
-      }
-    });
-    actions.appendChild(btn);
+
+  // Bouton Confirmer
+  const btnConfirme = document.createElement("button");
+  btnConfirme.className = "btn-secondary";
+  btnConfirme.textContent = "Confirme";
+  btnConfirme.addEventListener("click", async () => {
+    try {
+      await updateBookingStatus(booking.id, "Confirme");
+      await loadExistingBookings();
+    } catch (err) {
+      alertEl.hidden = false;
+      alertEl.textContent = err.message;
+    }
   });
+  actions.appendChild(btnConfirme);
+
+  // Bouton Annule
+  const btnAnnule = document.createElement("button");
+  btnAnnule.className = "btn-secondary";
+  btnAnnule.textContent = "Annule";
+  btnAnnule.addEventListener("click", async () => {
+    try {
+      await updateBookingStatus(booking.id, "Annule");
+      await loadExistingBookings();
+    } catch (err) {
+      alertEl.hidden = false;
+      alertEl.textContent = err.message;
+    }
+  });
+  actions.appendChild(btnAnnule);
+
+  // Bouton Termine = suppression
+  const btnTermine = document.createElement("button");
+  btnTermine.className = "btn-secondary";
+  btnTermine.textContent = "Termine";
+  btnTermine.addEventListener("click", async () => {
+    if (!confirm("Supprimer ce rendez-vous définitivement ?")) return;
+    try {
+      const res = await fetch(`/api/bookings/${booking.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Erreur lors de la suppression.");
+      }
+      tr.remove();
+      // Optionnel : mettre à jour le résumé
+      await loadExistingBookings();
+    } catch (err) {
+      alertEl.hidden = false;
+      alertEl.textContent = err.message;
+    }
+  });
+  actions.appendChild(btnTermine);
 
   actionsTd.appendChild(actions);
   tr.appendChild(actionsTd);
