@@ -448,6 +448,70 @@ label {
   background: rgba(185, 120, 63, 0.14);
 }
 
+.booking-ticket {
+  grid-column: 1 / -1;
+  display: grid;
+  gap: 0.9rem;
+  padding: 1rem;
+  border-radius: 18px;
+  border: 1px solid var(--line);
+  background: linear-gradient(180deg, #fffdf9, #f7f0e6);
+}
+
+.booking-ticket__card {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.booking-ticket__eyebrow {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.booking-ticket__title {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.booking-ticket__details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.8rem;
+  margin: 0;
+}
+
+.booking-ticket__details div {
+  padding: 0.8rem 0.9rem;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(185, 120, 63, 0.14);
+}
+
+.booking-ticket__details dt {
+  margin: 0 0 0.25rem;
+  font-size: 0.84rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.booking-ticket__details dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.booking-ticket__note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.booking-ticket__print {
+  width: fit-content;
+}
+
 input,
 select,
 button {
@@ -609,8 +673,37 @@ select:focus {
     grid-template-columns: 1fr;
   }
 
+  .booking-ticket__details {
+    grid-template-columns: 1fr;
+  }
+
   h1 {
     font-size: 2.35rem;
+  }
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .booking-ticket,
+  .booking-ticket * {
+    visibility: visible;
+  }
+
+  .booking-ticket {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    border: 0;
+    background: #fff;
+    padding: 0;
+  }
+
+  .booking-ticket__print {
+    display: none;
   }
 }
 

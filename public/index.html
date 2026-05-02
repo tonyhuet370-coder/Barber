@@ -158,6 +158,32 @@
             <button type="submit" class="btn-primary">Confirmer le rendez-vous</button>
             <p id="message" class="message"></p>
             <a id="download-booking" class="booking-download" href="#" download hidden>Telecharger mon rendez-vous</a>
+            <section id="booking-ticket" class="booking-ticket" hidden>
+              <div class="booking-ticket__card" id="booking-ticket-card">
+                <p class="booking-ticket__eyebrow">Confirmation client</p>
+                <h3 id="ticket-title" class="booking-ticket__title">Votre rendez-vous est enregistre</h3>
+                <dl class="booking-ticket__details">
+                  <div>
+                    <dt>Nom</dt>
+                    <dd id="ticket-name">-</dd>
+                  </div>
+                  <div>
+                    <dt>Service</dt>
+                    <dd id="ticket-service">-</dd>
+                  </div>
+                  <div>
+                    <dt>Date</dt>
+                    <dd id="ticket-date">-</dd>
+                  </div>
+                  <div>
+                    <dt>Heure</dt>
+                    <dd id="ticket-time">-</dd>
+                  </div>
+                </dl>
+                <p class="booking-ticket__note">Conserve ce recapitulatif et presente-toi quelques minutes avant l'horaire reserve.</p>
+              </div>
+              <button id="print-booking" type="button" class="btn-outline booking-ticket__print">Imprimer / Enregistrer en PDF</button>
+            </section>
           </form>
         </div>
       </section>

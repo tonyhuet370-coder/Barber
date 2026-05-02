@@ -5,6 +5,13 @@ const messageEl = document.querySelector("#message");
 const timeInput = document.querySelector("#time");
 const submitButton = form.querySelector("button[type='submit']");
 const downloadBookingLink = document.querySelector("#download-booking");
+const bookingTicket = document.querySelector("#booking-ticket");
+const printBookingButton = document.querySelector("#print-booking");
+const ticketTitle = document.querySelector("#ticket-title");
+const ticketName = document.querySelector("#ticket-name");
+const ticketService = document.querySelector("#ticket-service");
+const ticketDate = document.querySelector("#ticket-date");
+const ticketTime = document.querySelector("#ticket-time");
 
 let selectedSlot = "";
 let availabilityController = null;
@@ -25,6 +32,15 @@ function clearBookingDownload() {
   downloadBookingLink.hidden = true;
   downloadBookingLink.removeAttribute("href");
   downloadBookingLink.removeAttribute("download");
+}
+
+function clearBookingTicket() {
+  bookingTicket.hidden = true;
+  ticketTitle.textContent = "Votre rendez-vous est enregistre";
+  ticketName.textContent = "-";
+  ticketService.textContent = "-";
+  ticketDate.textContent = "-";
+  ticketTime.textContent = "-";
 }
 
 function formatBookingDate(dateValue) {
@@ -121,6 +137,15 @@ function showBookingDownload(booking) {
   downloadBookingLink.hidden = false;
 }
 
+function showBookingTicket(booking) {
+  ticketTitle.textContent = buildBookingMessage(booking);
+  ticketName.textContent = booking.client_name || "-";
+  ticketService.textContent = booking.service || "-";
+  ticketDate.textContent = formatBookingDate(booking.date);
+  ticketTime.textContent = booking.time || "-";
+  bookingTicket.hidden = false;
+}
+
 function updateSubmitState() {
   submitButton.disabled = !selectedSlot || isSubmitting;
 }
@@ -164,6 +189,7 @@ async function loadAvailability(date) {
   slotsContainer.innerHTML = "";
   setMessage("");
   clearBookingDownload();
+  clearBookingTicket();
   updateSubmitState();
 
   if (!date) {
@@ -262,6 +288,7 @@ form.addEventListener("submit", async (event) => {
 
     setMessage(buildBookingMessage(confirmedBooking), "ok");
     showBookingDownload(confirmedBooking);
+    showBookingTicket(confirmedBooking);
     form.reset();
     slotsContainer.innerHTML = "";
     selectedSlot = "";
@@ -287,3 +314,8 @@ const mm = String(tomorrow.getMonth() + 1).padStart(2, "0");
 const dd = String(tomorrow.getDate()).padStart(2, "0");
 dateInput.min = `${yyyy}-${mm}-${dd}`;
 updateSubmitState();
+clearBookingTicket();
+
+printBookingButton.addEventListener("click", () => {
+  window.print();
+});
