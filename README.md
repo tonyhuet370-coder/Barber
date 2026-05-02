@@ -21,25 +21,25 @@ npm.cmd install
 ## Configuration e-mail
 
 1. Copier `.env.example` vers `.env`
-2. Completer les variables SMTP Gmail:
+2. Completer les variables SMTP Brevo:
 
 ```env
 PORT=3000
 OWNER_EMAIL=boss@monsalon.com
-MAIL_FROM=votre_adresse_gmail
-SMTP_HOST=smtp.gmail.com
-SMTP_PORT=465
-SMTP_USER=votre_adresse_gmail
-SMTP_PASS=votre_mot_de_passe_application_google
-SMTP_FAMILY=4
+MAIL_FROM=votre_adresse_validee_brevo
+SMTP_HOST=smtp-relay.brevo.com
+SMTP_PORT=587
+SMTP_USER=votre_login_smtp_brevo
+SMTP_PASS=votre_cle_smtp_brevo
+BREVO_API_KEY=votre_vraie_cle_api_brevo
 ```
 
-Notes Gmail:
-- `SMTP_PASS` doit etre un mot de passe d'application Google, pas ton mot de passe Gmail habituel.
-- `MAIL_FROM` peut etre la meme adresse que `SMTP_USER` pour les tests.
-- Sur Railway, `SMTP_FAMILY=4` aide a eviter les timeouts reseau avec Gmail.
-- Utilise de preference `SMTP_PORT=465` avec Gmail sur Railway.
-- Pense a verifier le dossier spam pendant les essais.
+Notes Brevo:
+- `SMTP_USER` est le login SMTP affiche dans Brevo, pas forcement ton adresse mail.
+- `SMTP_PASS` est la cle SMTP/API fournie par Brevo.
+- `MAIL_FROM` doit etre une adresse expeditrice validee dans Brevo.
+- `SMTP_FAMILY` n'est pas necessaire avec Brevo.
+- `BREVO_API_KEY` est une vraie cle API Brevo distincte de la cle SMTP. Sur Railway, elle permet d'eviter completement le SMTP si celui-ci timeout.
 
 Si SMTP n'est pas configure, les e-mails ne partiront pas.
 

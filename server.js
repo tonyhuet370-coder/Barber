@@ -25,15 +25,19 @@ const ADMIN_LOGIN_PATH = process.env.ADMIN_LOGIN_PATH || "/acces-coiffeur-prive"
 const ADMIN_RESET_CODE = process.env.ADMIN_RESET_CODE || "";
 const ADMIN_RESET_CODE_HASH = process.env.ADMIN_RESET_CODE_HASH || "";
 const AUTH_COOKIE_NAME = "barber_admin_auth";
+const BREVO_API_KEY = String(process.env.BREVO_API_KEY || "").trim();
 
 function hasRealValue(value) {
   return Boolean(value) && !String(value).includes("COLLE_TON");
 }
 
-const EMAIL_NOTIFICATIONS_ENABLED =
+const SMTP_EMAIL_NOTIFICATIONS_ENABLED =
   hasRealValue(process.env.SMTP_HOST) &&
   hasRealValue(process.env.SMTP_USER) &&
   hasRealValue(process.env.SMTP_PASS);
+
+const BREVO_API_NOTIFICATIONS_ENABLED = hasRealValue(BREVO_API_KEY);
+const EMAIL_NOTIFICATIONS_ENABLED = BREVO_API_NOTIFICATIONS_ENABLED || SMTP_EMAIL_NOTIFICATIONS_ENABLED;
 
 app.use(cors());
 app.use(express.json());
@@ -137,14 +141,11 @@ function verifyAndConsumeResetCode(email = "", code = "") {
 }
 
 async function sendAdminResetCode(email, code) {
-  if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
+  if (!EMAIL_NOTIFICATIONS_ENABLED) {
     throw new Error("La recuperation par email n'est pas configuree.");
   }
 
-  const fromAddress = process.env.MAIL_FROM || "noreply@monsalon.com";
-
-  await transporter.sendMail({
-    from: fromAddress,
+  await sendEmail({
     to: email,
     subject: "Code de recuperation admin",
     text:
@@ -241,7 +242,7 @@ function isSameDayBooking(dateValue) {
 }
 
 function createTransporter() {
-  if (!EMAIL_NOTIFICATIONS_ENABLED) {
+  if (!SMTP_EMAIL_NOTIFICATIONS_ENABLED || BREVO_API_NOTIFICATIONS_ENABLED) {
     return null;
   }
 
@@ -273,6 +274,77 @@ function createTransporter() {
 
 const transporter = createTransporter();
 
+async function sendEmail({ to, subject, text }) {
+  const fromAddress = process.env.MAIL_FROM || "noreply@monsalon.com";
+
+  if (BREVO_API_NOTIFICATIONS_ENABLED) {
+    const payload = JSON.stringify({
+      sender: {
+        email: fromAddress
+      },
+      to: [{ email: to }],
+      subject,
+      textContent: text
+    });
+
+    const data = await new Promise((resolve, reject) => {
+      const req = https.request("https://api.brevo.com/v3/smtp/email", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          "api-key": BREVO_API_KEY,
+          "Content-Length": Buffer.byteLength(payload)
+        }
+      }, (res) => {
+        let body = "";
+
+        res.setEncoding("utf8");
+        res.on("data", (chunk) => {
+          body += chunk;
+        });
+        res.on("end", () => {
+          let parsed = {};
+
+          try {
+            parsed = body ? JSON.parse(body) : {};
+          } catch {
+            parsed = { raw: body };
+          }
+
+          if ((res.statusCode || 500) >= 400) {
+            reject(new Error(parsed.message || parsed.code || "Impossible d'envoyer l'email via Brevo."));
+            return;
+          }
+
+          resolve(parsed);
+        });
+      });
+
+      req.on("error", reject);
+      req.write(payload);
+      req.end();
+    });
+
+    return {
+      accepted: [to],
+      rejected: [],
+      messageId: data.messageId || ""
+    };
+  }
+
+  if (!transporter) {
+    throw new Error("SMTP non configure.");
+  }
+
+  return transporter.sendMail({
+    from: fromAddress,
+    to,
+    subject,
+    text
+  });
+}
+
 async function sendTelegramNotification(booking) {
   const token = process.env.TELEGRAM_BOT_TOKEN;
   const chatId = process.env.TELEGRAM_CHAT_ID;
@@ -296,29 +368,21 @@ async function sendTelegramNotification(booking) {
 }
 
 async function sendBookingEmails(booking) {
-  if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
-    console.log("Email notifications skipped: SMTP is not configured.");
+  if (!EMAIL_NOTIFICATIONS_ENABLED) {
+    console.log("Email notifications skipped: no email provider is configured.");
     return;
   }
 
-  const fromAddress = process.env.MAIL_FROM || "noreply@monsalon.com";
-
-  const clientMail = {
-    from: fromAddress,
+  const clientResult = await sendEmail({
     to: booking.client_email,
     subject: "Confirmation de votre rendez-vous",
     text: `Bonjour ${booking.client_name},\n\nVotre rendez-vous est confirme pour le ${booking.date} a ${booking.time}.\nService: ${booking.service}.\n\nMerci et a bientot.`
-  };
-
-  const ownerMail = {
-    from: fromAddress,
+  });
+  const ownerResult = await sendEmail({
     to: OWNER_EMAIL,
     subject: "Nouveau rendez-vous client",
     text: `Nouveau rendez-vous:\nClient: ${booking.client_name}\nEmail: ${booking.client_email}\nService: ${booking.service}\nDate: ${booking.date}\nHeure: ${booking.time}`
-  };
-
-  const clientResult = await transporter.sendMail(clientMail);
-  const ownerResult = await transporter.sendMail(ownerMail);
+  });
 
   console.log("Client email accepted:", clientResult.accepted || []);
   console.log("Client email rejected:", clientResult.rejected || []);
@@ -607,6 +671,11 @@ io.on("connection", () => {
 
 server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+
+  if (BREVO_API_NOTIFICATIONS_ENABLED) {
+    console.log("Brevo email API enabled.");
+    return;
+  }
 
   if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
     console.log("Email notifications disabled: SMTP is not configured.");
