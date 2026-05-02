@@ -362,12 +362,10 @@ downloadBookingLink.addEventListener("click", async () => {
 
   setDownloadLoadingState(true);
 
-  window.setTimeout(() => {
-    downloadBookingPdf(latestConfirmedBooking)
-      .finally(() => {
-        window.setTimeout(() => {
-          setDownloadLoadingState(false);
-        }, 600);
-      });
-  }, 120);
+  downloadBookingPdf(latestConfirmedBooking)
+    .finally(() => {
+      window.setTimeout(() => {
+        setDownloadLoadingState(false);
+      }, 600);
+    });
 });
