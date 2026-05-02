@@ -425,8 +425,27 @@ label {
 .slots-wrapper,
 .booking-form input[type="hidden"],
 .booking-form button,
-.booking-form .message {
+.booking-form .message,
+.booking-form .booking-download {
   grid-column: 1 / -1;
+}
+
+.booking-download {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: fit-content;
+  padding: 0.8rem 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(185, 120, 63, 0.24);
+  background: rgba(185, 120, 63, 0.08);
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.booking-download:hover {
+  background: rgba(185, 120, 63, 0.14);
 }
 
 input,
