@@ -249,6 +249,7 @@ function createTransporter() {
   const port = Number(process.env.SMTP_PORT || 587);
   const user = process.env.SMTP_USER;
   const pass = String(process.env.SMTP_PASS || "").replace(/\s+/g, "");
+  const family = Number(process.env.SMTP_FAMILY || (String(host || "").includes("gmail.com") ? 4 : 0)) || undefined;
 
   if (host && user && pass) {
     return nodemailer.createTransport({
@@ -258,7 +259,12 @@ function createTransporter() {
       auth: { user, pass },
       connectionTimeout: 10000,
       greetingTimeout: 10000,
-      socketTimeout: 15000
+      socketTimeout: 15000,
+      dnsTimeout: 10000,
+      family,
+      tls: {
+        servername: host
+      }
     });
   }
 
