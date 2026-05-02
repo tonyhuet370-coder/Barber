@@ -16,7 +16,7 @@ const ticketTime = document.querySelector("#ticket-time");
 let selectedSlot = "";
 let availabilityController = null;
 let isSubmitting = false;
-let bookingDownloadUrl = "";
+let latestConfirmedBooking = null;
 
 function setMessage(text, type = "") {
   messageEl.textContent = text;
@@ -24,14 +24,8 @@ function setMessage(text, type = "") {
 }
 
 function clearBookingDownload() {
-  if (bookingDownloadUrl) {
-    URL.revokeObjectURL(bookingDownloadUrl);
-    bookingDownloadUrl = "";
-  }
-
   downloadBookingLink.hidden = true;
-  downloadBookingLink.removeAttribute("href");
-  downloadBookingLink.removeAttribute("download");
+  latestConfirmedBooking = null;
 }
 
 function clearBookingTicket() {
@@ -77,64 +71,49 @@ function buildBookingMessage(booking) {
   return `Rendez-vous confirme ${relativeLabel} : ${formattedDate} a ${booking.time} pour ${booking.service}.`;
 }
 
-function toIcsDate(dateValue, timeValue) {
-  const [year, month, day] = dateValue.split("-");
-  const [hour, minute] = timeValue.split(":");
-  return `${year}${month}${day}T${hour}${minute}00`;
-}
-
-function escapeIcsText(value) {
-  return String(value || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/;/g, "\\;")
-    .replace(/,/g, "\\,")
-    .replace(/\n/g, "\\n");
-}
-
-function createBookingCalendarFile(booking) {
-  const start = toIcsDate(booking.date, booking.time);
-  const [hours, minutes] = booking.time.split(":").map(Number);
-  const endDate = new Date(`${booking.date}T${booking.time}:00`);
-  endDate.setHours(hours + 1, minutes, 0, 0);
-
-  const end = [
-    endDate.getFullYear(),
-    String(endDate.getMonth() + 1).padStart(2, "0"),
-    String(endDate.getDate()).padStart(2, "0")
-  ].join("") +
-    `T${String(endDate.getHours()).padStart(2, "0")}${String(endDate.getMinutes()).padStart(2, "0")}00`;
-
-  const createdAt = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
-  const summary = escapeIcsText(`Rendez-vous Barbier - ${booking.service}`);
-  const description = escapeIcsText(
-    `Client: ${booking.client_name}\nService: ${booking.service}\nDate: ${formatBookingDate(booking.date)}\nHeure: ${booking.time}`
-  );
-
-  return [
-    "BEGIN:VCALENDAR",
-    "VERSION:2.0",
-    "PRODID:-//Barber Shop//Appointments//FR",
-    "BEGIN:VEVENT",
-    `UID:booking-${booking.id || booking.date + booking.time}@barber-shop`,
-    `DTSTAMP:${createdAt}`,
-    `DTSTART:${start}`,
-    `DTEND:${end}`,
-    `SUMMARY:${summary}`,
-    `DESCRIPTION:${description}`,
-    "END:VEVENT",
-    "END:VCALENDAR"
-  ].join("\r\n");
-}
-
 function showBookingDownload(booking) {
   clearBookingDownload();
-
-  const icsContent = createBookingCalendarFile(booking);
-  const blob = new Blob([icsContent], { type: "text/calendar;charset=utf-8" });
-  bookingDownloadUrl = URL.createObjectURL(blob);
-  downloadBookingLink.href = bookingDownloadUrl;
-  downloadBookingLink.download = `rendez-vous-${booking.date}-${booking.time.replace(":", "-")}.ics`;
+  latestConfirmedBooking = booking;
   downloadBookingLink.hidden = false;
+}
+
+function downloadBookingPdf(booking) {
+  const jsPdfNamespace = window.jspdf;
+
+  if (!jsPdfNamespace || !jsPdfNamespace.jsPDF) {
+    setMessage("Le module PDF n'est pas disponible pour le moment.", "error");
+    return;
+  }
+
+  const { jsPDF } = jsPdfNamespace;
+  const pdf = new jsPDF({ unit: "mm", format: "a4" });
+  const formattedDate = formatBookingDate(booking.date);
+  const relativeLabel = getRelativeBookingLabel(booking.date);
+
+  pdf.setFillColor(247, 240, 230);
+  pdf.roundedRect(15, 18, 180, 92, 6, 6, "F");
+  pdf.setTextColor(120, 88, 50);
+  pdf.setFont("helvetica", "bold");
+  pdf.setFontSize(12);
+  pdf.text("Confirmation de rendez-vous", 20, 30);
+
+  pdf.setTextColor(30, 25, 20);
+  pdf.setFontSize(18);
+  pdf.text("Barber Shop", 20, 40);
+
+  pdf.setFont("helvetica", "normal");
+  pdf.setFontSize(11);
+  pdf.text(`Votre rendez-vous est confirme ${relativeLabel}.`, 20, 50);
+  pdf.text(`Nom : ${booking.client_name}`, 20, 64);
+  pdf.text(`Service : ${booking.service}`, 20, 74);
+  pdf.text(`Date : ${formattedDate}`, 20, 84);
+  pdf.text(`Heure : ${booking.time}`, 20, 94);
+
+  pdf.setFontSize(10);
+  pdf.setTextColor(90, 90, 90);
+  pdf.text("Merci de vous presenter quelques minutes avant votre horaire.", 20, 105);
+
+  pdf.save(`rendez-vous-${booking.date}-${booking.time.replace(":", "-")}.pdf`);
 }
 
 function showBookingTicket(booking) {
@@ -318,4 +297,12 @@ clearBookingTicket();
 
 printBookingButton.addEventListener("click", () => {
   window.print();
+});
+
+downloadBookingLink.addEventListener("click", () => {
+  if (!latestConfirmedBooking) {
+    return;
+  }
+
+  downloadBookingPdf(latestConfirmedBooking);
 });

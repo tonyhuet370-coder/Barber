@@ -157,7 +157,7 @@
             <input type="hidden" id="time" name="time" required />
             <button type="submit" class="btn-primary">Confirmer le rendez-vous</button>
             <p id="message" class="message"></p>
-            <a id="download-booking" class="booking-download" href="#" download hidden>Telecharger mon rendez-vous</a>
+            <button id="download-booking" type="button" class="booking-download" hidden>Telecharger mon rendez-vous en PDF</button>
             <section id="booking-ticket" class="booking-ticket" hidden>
               <div class="booking-ticket__card" id="booking-ticket-card">
                 <p class="booking-ticket__eyebrow">Confirmation client</p>
@@ -189,6 +189,7 @@
       </section>
     </main>
 
-    <script src="app.js?v=20260419"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+    <script src="app.js?v=20260502"></script>
   </body>
 </html>
