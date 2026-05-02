@@ -255,7 +255,10 @@ function createTransporter() {
       host,
       port,
       secure: port === 465,
-      auth: { user, pass }
+      auth: { user, pass },
+      connectionTimeout: 10000,
+      greetingTimeout: 10000,
+      socketTimeout: 15000
     });
   }
 
@@ -317,6 +320,22 @@ async function sendBookingEmails(booking) {
   if (ownerResult.message) {
     console.log("Owner email preview:", ownerResult.message.toString());
   }
+}
+
+function queueBookingNotifications(booking) {
+  setImmediate(async () => {
+    try {
+      await sendBookingEmails(booking);
+    } catch (mailErr) {
+      console.error("Email error:", mailErr);
+    }
+
+    try {
+      await sendTelegramNotification(booking);
+    } catch (tgErr) {
+      console.error("Telegram error:", tgErr);
+    }
+  });
 }
 
 app.get("/api/availability", (req, res) => {
@@ -466,19 +485,6 @@ app.get("/api/bookings", requireAdmin, (_, res) => {
 });
 
 app.patch("/api/bookings/:id/status", requireAdmin, (req, res) => {
-  // Supprimer un rendez-vous
-  app.delete("/api/bookings/:id", requireAdmin, (req, res) => {
-    const { id } = req.params;
-    try {
-      const result = db.prepare("DELETE FROM bookings WHERE id = ?").run(id);
-      if (result.changes === 0) {
-        return res.status(404).json({ error: "Rendez-vous introuvable." });
-      }
-      return res.json({ success: true });
-    } catch (err) {
-      return res.status(500).json({ error: "Erreur serveur" });
-    }
-  });
   const { id } = req.params;
   const { status } = req.body;
   const allowedStatuses = ["Confirme", "Termine", "Annule"];
@@ -489,6 +495,22 @@ app.patch("/api/bookings/:id/status", requireAdmin, (req, res) => {
 
   try {
     const result = db.prepare("UPDATE bookings SET status = ? WHERE id = ?").run(status, id);
+
+    if (result.changes === 0) {
+      return res.status(404).json({ error: "Rendez-vous introuvable." });
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    return res.status(500).json({ error: "Erreur serveur" });
+  }
+});
+
+app.delete("/api/bookings/:id", requireAdmin, (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const result = db.prepare("DELETE FROM bookings WHERE id = ?").run(id);
 
     if (result.changes === 0) {
       return res.status(404).json({ error: "Rendez-vous introuvable." });
@@ -548,19 +570,8 @@ app.post("/api/bookings", async (req, res) => {
       status: "Confirme"
     };
 
-    try {
-      await sendBookingEmails(booking);
-    } catch (mailErr) {
-      console.error("Email error:", mailErr);
-    }
-
-    try {
-      await sendTelegramNotification(booking);
-    } catch (tgErr) {
-      console.error("Telegram error:", tgErr);
-    }
-
     io.emit("new-booking", booking);
+    queueBookingNotifications(booking);
 
     return res.status(201).json({
       message: "Rendez-vous enregistre avec succes.",

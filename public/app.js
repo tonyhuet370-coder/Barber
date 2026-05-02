@@ -132,18 +132,29 @@ form.addEventListener("submit", async (event) => {
       body: JSON.stringify(payload)
     });
 
-    const data = await res.json();
+    let data;
+
+    try {
+      data = await res.json();
+    } catch {
+      throw new Error("Le serveur a repondu de facon invalide. Reessaie dans un instant.");
+    }
 
     if (!res.ok) {
       throw new Error(data.error || "Impossible de reserver ce creneau.");
     }
 
-    setMessage("Rendez-vous confirme.", "ok");
+    setMessage(data.message || "Rendez-vous confirme.", "ok");
     form.reset();
     slotsContainer.innerHTML = "";
     selectedSlot = "";
     updateSubmitState();
   } catch (err) {
+    if (err.name === "TypeError") {
+      setMessage("Connexion au serveur impossible. Verifie le reseau puis reessaie.", "error");
+      return;
+    }
+
     setMessage(err.message, "error");
   } finally {
     isSubmitting = false;
