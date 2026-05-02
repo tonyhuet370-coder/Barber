@@ -351,20 +351,62 @@ async function sendTelegramNotification(booking) {
 
   if (!token || !chatId) return;
 
-  const text = encodeURIComponent(
-    `🔔 Nouveau rendez-vous!\n👤 ${booking.client_name}\n✂️ ${booking.service}\n📅 ${booking.date} à ${booking.time}\n📧 ${booking.client_email}`
-  );
-
-  return new Promise((resolve) => {
-    const url = `https://api.telegram.org/bot${token}/sendMessage?chat_id=${chatId}&text=${text}`;
-    https.get(url, (res) => {
-      res.resume();
-      res.on("end", resolve);
-    }).on("error", (err) => {
-      console.error("Telegram error:", err.message);
-      resolve();
-    });
+  const payload = JSON.stringify({
+    chat_id: chatId,
+    text: `🔔 Nouveau rendez-vous!\n👤 ${booking.client_name}\n✂️ ${booking.service}\n📅 ${booking.date} à ${booking.time}\n📧 ${booking.client_email}`,
+    disable_notification: false
   });
+
+  for (let attempt = 1; attempt <= 3; attempt += 1) {
+    try {
+      await new Promise((resolve, reject) => {
+        const req = https.request(`https://api.telegram.org/bot${token}/sendMessage`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Content-Length": Buffer.byteLength(payload)
+          }
+        }, (res) => {
+          let body = "";
+
+          res.setEncoding("utf8");
+          res.on("data", (chunk) => {
+            body += chunk;
+          });
+          res.on("end", () => {
+            let parsed = {};
+
+            try {
+              parsed = body ? JSON.parse(body) : {};
+            } catch {
+              parsed = { raw: body };
+            }
+
+            if ((res.statusCode || 500) >= 400 || parsed.ok === false) {
+              reject(new Error(parsed.description || "Echec de l'envoi Telegram."));
+              return;
+            }
+
+            resolve();
+          });
+        });
+
+        req.setTimeout(5000, () => {
+          req.destroy(new Error("Telegram timeout"));
+        });
+
+        req.on("error", reject);
+        req.write(payload);
+        req.end();
+      });
+
+      return;
+    } catch (err) {
+      if (attempt === 3) {
+        throw err;
+      }
+    }
+  }
 }
 
 async function sendBookingEmails(booking) {
@@ -400,17 +442,16 @@ async function sendBookingEmails(booking) {
 
 function queueBookingNotifications(booking) {
   setImmediate(async () => {
-    try {
-      await sendBookingEmails(booking);
-    } catch (mailErr) {
-      console.error("Email error:", mailErr);
-    }
+    const tasks = [
+      sendTelegramNotification(booking).catch((tgErr) => {
+        console.error("Telegram error:", tgErr);
+      }),
+      sendBookingEmails(booking).catch((mailErr) => {
+        console.error("Email error:", mailErr);
+      })
+    ];
 
-    try {
-      await sendTelegramNotification(booking);
-    } catch (tgErr) {
-      console.error("Telegram error:", tgErr);
-    }
+    await Promise.allSettled(tasks);
   });
 }
 
