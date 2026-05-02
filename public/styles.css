@@ -531,7 +531,13 @@ label {
   color: var(--muted);
 }
 
-.booking-ticket__print {
+.booking-ticket__download-note {
+  margin: 0;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.booking-ticket__download {
   width: fit-content;
 }
 
@@ -725,7 +731,7 @@ select:focus {
     padding: 0;
   }
 
-  .booking-ticket__print {
+  .booking-ticket__download {
     display: none;
   }
 }

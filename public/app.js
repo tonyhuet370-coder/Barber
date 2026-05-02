@@ -4,9 +4,8 @@ const form = document.querySelector("#booking-form");
 const messageEl = document.querySelector("#message");
 const timeInput = document.querySelector("#time");
 const submitButton = form.querySelector("button[type='submit']");
-const downloadBookingLink = document.querySelector("#download-booking");
 const bookingTicket = document.querySelector("#booking-ticket");
-const printBookingButton = document.querySelector("#print-booking");
+const downloadBookingLink = document.querySelector("#download-booking");
 const ticketTitle = document.querySelector("#ticket-title");
 const ticketName = document.querySelector("#ticket-name");
 const ticketService = document.querySelector("#ticket-service");
@@ -350,10 +349,6 @@ const dd = String(tomorrow.getDate()).padStart(2, "0");
 dateInput.min = `${yyyy}-${mm}-${dd}`;
 updateSubmitState();
 clearBookingTicket();
-
-printBookingButton.addEventListener("click", () => {
-  window.print();
-});
 
 downloadBookingLink.addEventListener("click", async () => {
   if (!latestConfirmedBooking || isDownloadingBooking) {
