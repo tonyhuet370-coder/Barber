@@ -7,6 +7,7 @@ const submitButton = form.querySelector("button[type='submit']");
 
 let selectedSlot = "";
 let availabilityController = null;
+let isSubmitting = false;
 
 function setMessage(text, type = "") {
   messageEl.textContent = text;
@@ -14,7 +15,7 @@ function setMessage(text, type = "") {
 }
 
 function updateSubmitState() {
-  submitButton.disabled = !selectedSlot;
+  submitButton.disabled = !selectedSlot || isSubmitting;
 }
 
 function setSlotsLoading(isLoading) {
@@ -102,6 +103,10 @@ form.addEventListener("submit", async (event) => {
   event.preventDefault();
   setMessage("");
 
+  if (isSubmitting) {
+    return;
+  }
+
   if (!selectedSlot) {
     setMessage("Selectionne un horaire disponible.", "error");
     return;
@@ -117,6 +122,8 @@ form.addEventListener("submit", async (event) => {
   };
 
   try {
+    isSubmitting = true;
+    updateSubmitState();
     const res = await fetch("/api/bookings", {
       method: "POST",
       headers: {
@@ -138,6 +145,9 @@ form.addEventListener("submit", async (event) => {
     updateSubmitState();
   } catch (err) {
     setMessage(err.message, "error");
+  } finally {
+    isSubmitting = false;
+    updateSubmitState();
   }
 });
 
