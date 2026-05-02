@@ -99,7 +99,7 @@ function isSafariBrowser() {
   return /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS|Chrome/i.test(userAgent);
 }
 
-function downloadBookingPdf(booking) {
+async function downloadBookingPdf(booking) {
   const jsPdfNamespace = window.jspdf;
 
   if (!jsPdfNamespace || !jsPdfNamespace.jsPDF) {
@@ -139,6 +139,27 @@ function downloadBookingPdf(booking) {
 
   if (isIosDevice() || isSafariBrowser()) {
     const pdfBlob = pdf.output("blob");
+
+    if (typeof window.navigator.share === "function") {
+      try {
+        const pdfFile = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+        if (!window.navigator.canShare || window.navigator.canShare({ files: [pdfFile] })) {
+          await window.navigator.share({
+            title: "Rendez-vous Barber Shop",
+            text: "Voici votre confirmation de rendez-vous.",
+            files: [pdfFile]
+          });
+          setMessage("Le PDF a ete ouvert dans le menu de partage. Sur iPhone, choisis Enregistrer dans Fichiers.", "ok");
+          return;
+        }
+      } catch (err) {
+        if (err && err.name !== "AbortError") {
+          console.error("Share error:", err);
+        }
+      }
+    }
+
     const pdfUrl = URL.createObjectURL(pdfBlob);
     window.open(pdfUrl, "_blank", "noopener,noreferrer");
     setMessage("Le PDF s'ouvre dans un nouvel onglet. Sur iPhone, utilise Partager puis Enregistrer dans Fichiers.", "ok");
@@ -334,7 +355,7 @@ printBookingButton.addEventListener("click", () => {
   window.print();
 });
 
-downloadBookingLink.addEventListener("click", () => {
+downloadBookingLink.addEventListener("click", async () => {
   if (!latestConfirmedBooking || isDownloadingBooking) {
     return;
   }
@@ -342,12 +363,11 @@ downloadBookingLink.addEventListener("click", () => {
   setDownloadLoadingState(true);
 
   window.setTimeout(() => {
-    try {
-      downloadBookingPdf(latestConfirmedBooking);
-    } finally {
-      window.setTimeout(() => {
-        setDownloadLoadingState(false);
-      }, 600);
-    }
+    downloadBookingPdf(latestConfirmedBooking)
+      .finally(() => {
+        window.setTimeout(() => {
+          setDownloadLoadingState(false);
+        }, 600);
+      });
   }, 120);
 });
