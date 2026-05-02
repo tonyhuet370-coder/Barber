@@ -291,6 +291,7 @@ async function sendTelegramNotification(booking) {
 
 async function sendBookingEmails(booking) {
   if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
+    console.log("Email notifications skipped: SMTP is not configured.");
     return;
   }
 
@@ -312,6 +313,11 @@ async function sendBookingEmails(booking) {
 
   const clientResult = await transporter.sendMail(clientMail);
   const ownerResult = await transporter.sendMail(ownerMail);
+
+  console.log("Client email accepted:", clientResult.accepted || []);
+  console.log("Client email rejected:", clientResult.rejected || []);
+  console.log("Owner email accepted:", ownerResult.accepted || []);
+  console.log("Owner email rejected:", ownerResult.rejected || []);
 
   if (clientResult.message) {
     console.log("Client email preview:", clientResult.message.toString());
@@ -594,8 +600,18 @@ io.on("connection", () => {
 });
 
 server.listen(PORT, () => {
-  if (!EMAIL_NOTIFICATIONS_ENABLED) {
-    console.log("Email notifications disabled: SMTP is not configured.");
-  }
   console.log(`Server running on http://localhost:${PORT}`);
+
+  if (!EMAIL_NOTIFICATIONS_ENABLED || !transporter) {
+    console.log("Email notifications disabled: SMTP is not configured.");
+    return;
+  }
+
+  transporter.verify()
+    .then(() => {
+      console.log("SMTP verified successfully.");
+    })
+    .catch((err) => {
+      console.error("SMTP verify failed:", err && err.message ? err.message : err);
+    });
 });
