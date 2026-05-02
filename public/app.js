@@ -77,6 +77,15 @@ function showBookingDownload(booking) {
   downloadBookingLink.hidden = false;
 }
 
+function isIosDevice() {
+  return /iPad|iPhone|iPod/.test(window.navigator.userAgent);
+}
+
+function isSafariBrowser() {
+  const userAgent = window.navigator.userAgent;
+  return /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS|Chrome/i.test(userAgent);
+}
+
 function downloadBookingPdf(booking) {
   const jsPdfNamespace = window.jspdf;
 
@@ -113,7 +122,20 @@ function downloadBookingPdf(booking) {
   pdf.setTextColor(90, 90, 90);
   pdf.text("Merci de vous presenter quelques minutes avant votre horaire.", 20, 105);
 
-  pdf.save(`rendez-vous-${booking.date}-${booking.time.replace(":", "-")}.pdf`);
+  const fileName = `rendez-vous-${booking.date}-${booking.time.replace(":", "-")}.pdf`;
+
+  if (isIosDevice() || isSafariBrowser()) {
+    const pdfBlob = pdf.output("blob");
+    const pdfUrl = URL.createObjectURL(pdfBlob);
+    window.open(pdfUrl, "_blank", "noopener,noreferrer");
+    setMessage("Le PDF s'ouvre dans un nouvel onglet. Sur iPhone, utilise Partager puis Enregistrer dans Fichiers.", "ok");
+    window.setTimeout(() => {
+      URL.revokeObjectURL(pdfUrl);
+    }, 60000);
+    return;
+  }
+
+  pdf.save(fileName);
 }
 
 function showBookingTicket(booking) {
