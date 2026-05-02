@@ -434,6 +434,7 @@ label {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 0.55rem;
   width: fit-content;
   padding: 0.8rem 1.1rem;
   border-radius: 999px;
@@ -442,10 +443,32 @@ label {
   color: var(--ink);
   text-decoration: none;
   font-weight: 700;
+  cursor: pointer;
 }
 
 .booking-download:hover {
   background: rgba(185, 120, 63, 0.14);
+}
+
+.booking-download[data-loading="true"] {
+  cursor: wait;
+  opacity: 0.9;
+}
+
+.booking-download[data-loading="true"]::before {
+  content: "";
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  border: 2px solid rgba(120, 88, 50, 0.18);
+  border-top-color: rgba(120, 88, 50, 0.9);
+  animation: booking-download-spin 0.8s linear infinite;
+}
+
+@keyframes booking-download-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .booking-ticket {

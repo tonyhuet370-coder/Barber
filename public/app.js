@@ -17,6 +17,7 @@ let selectedSlot = "";
 let availabilityController = null;
 let isSubmitting = false;
 let latestConfirmedBooking = null;
+let isDownloadingBooking = false;
 
 function setMessage(text, type = "") {
   messageEl.textContent = text;
@@ -25,6 +26,9 @@ function setMessage(text, type = "") {
 
 function clearBookingDownload() {
   downloadBookingLink.hidden = true;
+  downloadBookingLink.disabled = false;
+  downloadBookingLink.dataset.loading = "false";
+  downloadBookingLink.textContent = "Telecharger mon rendez-vous en PDF";
   latestConfirmedBooking = null;
 }
 
@@ -75,6 +79,15 @@ function showBookingDownload(booking) {
   clearBookingDownload();
   latestConfirmedBooking = booking;
   downloadBookingLink.hidden = false;
+}
+
+function setDownloadLoadingState(isLoading) {
+  isDownloadingBooking = isLoading;
+  downloadBookingLink.disabled = isLoading;
+  downloadBookingLink.dataset.loading = isLoading ? "true" : "false";
+  downloadBookingLink.textContent = isLoading
+    ? "Preparation du PDF..."
+    : "Telecharger mon rendez-vous en PDF";
 }
 
 function isIosDevice() {
@@ -322,9 +335,19 @@ printBookingButton.addEventListener("click", () => {
 });
 
 downloadBookingLink.addEventListener("click", () => {
-  if (!latestConfirmedBooking) {
+  if (!latestConfirmedBooking || isDownloadingBooking) {
     return;
   }
 
-  downloadBookingPdf(latestConfirmedBooking);
+  setDownloadLoadingState(true);
+
+  window.setTimeout(() => {
+    try {
+      downloadBookingPdf(latestConfirmedBooking);
+    } finally {
+      window.setTimeout(() => {
+        setDownloadLoadingState(false);
+      }, 600);
+    }
+  }, 120);
 });
