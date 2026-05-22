@@ -6,6 +6,7 @@ const timeInput = document.querySelector("#time");
 const submitButton = form.querySelector("button[type='submit']");
 const bookingTicket = document.querySelector("#booking-ticket");
 const downloadBookingLink = document.querySelector("#download-booking");
+const addToCalendarButton = document.querySelector("#add-to-calendar");
 const ticketTitle = document.querySelector("#ticket-title");
 const ticketName = document.querySelector("#ticket-name");
 const ticketService = document.querySelector("#ticket-service");
@@ -17,6 +18,7 @@ let availabilityController = null;
 let isSubmitting = false;
 let latestConfirmedBooking = null;
 let isDownloadingBooking = false;
+let isAddingCalendar = false;
 
 function setMessage(text, type = "") {
   messageEl.textContent = text;
@@ -28,6 +30,10 @@ function clearBookingDownload() {
   downloadBookingLink.disabled = false;
   downloadBookingLink.dataset.loading = "false";
   downloadBookingLink.textContent = "Telecharger mon rendez-vous en PDF";
+  addToCalendarButton.hidden = true;
+  addToCalendarButton.disabled = false;
+  addToCalendarButton.dataset.loading = "false";
+  addToCalendarButton.textContent = "Ajouter a mon agenda";
   latestConfirmedBooking = null;
 }
 
@@ -78,6 +84,7 @@ function showBookingDownload(booking) {
   clearBookingDownload();
   latestConfirmedBooking = booking;
   downloadBookingLink.hidden = false;
+  addToCalendarButton.hidden = false;
 }
 
 function setDownloadLoadingState(isLoading) {
@@ -89,6 +96,13 @@ function setDownloadLoadingState(isLoading) {
     : "Telecharger mon rendez-vous en PDF";
 }
 
+function setCalendarLoadingState(isLoading) {
+  isAddingCalendar = isLoading;
+  addToCalendarButton.disabled = isLoading;
+  addToCalendarButton.dataset.loading = isLoading ? "true" : "false";
+  addToCalendarButton.textContent = isLoading ? "Preparation de l'agenda..." : "Ajouter a mon agenda";
+}
+
 function isIosDevice() {
   return /iPad|iPhone|iPod/.test(window.navigator.userAgent);
 }
@@ -96,6 +110,88 @@ function isIosDevice() {
 function isSafariBrowser() {
   const userAgent = window.navigator.userAgent;
   return /Safari/i.test(userAgent) && !/CriOS|FxiOS|EdgiOS|Chrome/i.test(userAgent);
+}
+
+function formatAgendaDate(dateValue, timeValue) {
+  return `${dateValue.replace(/-/g, "") }T${timeValue.replace(":", "")}00`;
+}
+
+function escapeCalendarText(value) {
+  return String(value || "")
+    .replace(/\\/g, "\\\\")
+    .replace(/\n/g, "\\n")
+    .replace(/,/g, "\\,")
+    .replace(/;/g, "\\;");
+}
+
+function buildCalendarFile(booking) {
+  const start = formatAgendaDate(booking.date, booking.time);
+  const endDate = new Date(`${booking.date}T${booking.time}:00`);
+  endDate.setMinutes(endDate.getMinutes() + 60);
+  const end = `${endDate.getFullYear()}${String(endDate.getMonth() + 1).padStart(2, "0")}${String(endDate.getDate()).padStart(2, "0")}T${String(endDate.getHours()).padStart(2, "0")}${String(endDate.getMinutes()).padStart(2, "0")}00`;
+  const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+  const description = escapeCalendarText(
+    `Reservation Barber Shop\nService: ${booking.service}\nAdresse client: ${booking.address || "Non renseignee"}`
+  );
+
+  return [
+    "BEGIN:VCALENDAR",
+    "VERSION:2.0",
+    "PRODID:-//Barber Shop//Booking Calendar//FR",
+    "BEGIN:VEVENT",
+    `UID:barber-${booking.id || `${booking.date}-${booking.time}`}`,
+    `DTSTAMP:${stamp}`,
+    `DTSTART:${start}`,
+    `DTEND:${end}`,
+    `SUMMARY:${escapeCalendarText(`Rendez-vous Barbier - ${booking.service}`)}`,
+    `DESCRIPTION:${description}`,
+    "END:VEVENT",
+    "END:VCALENDAR"
+  ].join("\r\n");
+}
+
+async function addBookingToCalendar(booking, automatic = false) {
+  const calendarContent = buildCalendarFile(booking);
+  const fileName = `agenda-rendez-vous-${booking.date}-${booking.time.replace(":", "-")}.ics`;
+  const blob = new Blob([calendarContent], { type: "text/calendar;charset=utf-8" });
+
+  if ((isIosDevice() || isSafariBrowser()) && typeof window.navigator.share === "function") {
+    try {
+      const calendarFile = new File([blob], fileName, { type: "text/calendar" });
+      if (!window.navigator.canShare || window.navigator.canShare({ files: [calendarFile] })) {
+        await window.navigator.share({
+          title: "Ajouter le rendez-vous a l'agenda",
+          text: "Ajoute ce rendez-vous a ton agenda.",
+          files: [calendarFile]
+        });
+        if (!automatic) {
+          setMessage("Le rendez-vous a ete ouvert dans le menu de partage pour l'ajouter a ton agenda.", "ok");
+        }
+        return true;
+      }
+    } catch (err) {
+      if (err && err.name !== "AbortError") {
+        console.error("Calendar share error:", err);
+      }
+    }
+  }
+
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = fileName;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.setTimeout(() => {
+    URL.revokeObjectURL(url);
+  }, 60000);
+
+  if (!automatic) {
+    setMessage("Le fichier agenda a ete telecharge. Ouvre-le pour ajouter le rendez-vous a ton agenda.", "ok");
+  }
+
+  return true;
 }
 
 async function downloadBookingPdf(booking) {
@@ -329,6 +425,9 @@ form.addEventListener("submit", async (event) => {
     setMessage(buildBookingMessage(confirmedBooking), "ok");
     showBookingDownload(confirmedBooking);
     showBookingTicket(confirmedBooking);
+    addBookingToCalendar(confirmedBooking, true).catch((err) => {
+      console.error("Calendar error:", err);
+    });
     form.reset();
     slotsContainer.innerHTML = "";
     selectedSlot = "";
@@ -369,4 +468,20 @@ downloadBookingLink.addEventListener("click", async () => {
         setDownloadLoadingState(false);
       }, 600);
     });
+});
+
+addToCalendarButton.addEventListener("click", async () => {
+  if (!latestConfirmedBooking || isAddingCalendar) {
+    return;
+  }
+
+  setCalendarLoadingState(true);
+
+  try {
+    await addBookingToCalendar(latestConfirmedBooking, false);
+  } finally {
+    window.setTimeout(() => {
+      setCalendarLoadingState(false);
+    }, 600);
+  }
 });

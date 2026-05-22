@@ -541,8 +541,29 @@ label {
   color: var(--ink);
 }
 
+.booking-ticket__agenda-note {
+  margin: 0;
+  color: var(--muted);
+}
+
+.booking-ticket__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
 .booking-ticket__download {
   width: fit-content;
+}
+
+.booking-ticket__calendar[data-loading="true"]::before {
+  content: "";
+  width: 0.95rem;
+  height: 0.95rem;
+  border-radius: 50%;
+  border: 2px solid rgba(120, 88, 50, 0.18);
+  border-top-color: rgba(120, 88, 50, 0.9);
+  animation: booking-download-spin 0.8s linear infinite;
 }
 
 input,
