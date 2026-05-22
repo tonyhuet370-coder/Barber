@@ -280,6 +280,10 @@ form.addEventListener("submit", async (event) => {
     return;
   }
 
+  if (!form.reportValidity()) {
+    return;
+  }
+
   const formData = new FormData(form);
   const payload = {
     name: formData.get("name"),

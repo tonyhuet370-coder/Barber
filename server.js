@@ -654,9 +654,16 @@ app.delete("/api/bookings/:id", requireAdmin, (req, res) => {
 
 app.post("/api/bookings", async (req, res) => {
   const { name, email, service, date, time, address } = req.body;
+  const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedAddress = String(address || "").trim();
 
-  if (!name || !email || !service || !date || !time) {
+  if (!name || !normalizedEmail || !service || !date || !time || !normalizedAddress) {
     return res.status(400).json({ error: "Tous les champs sont obligatoires." });
+  }
+
+  const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
+  if (!validEmail) {
+    return res.status(400).json({ error: "Adresse email invalide." });
   }
 
   const normalizedDate = dayjs(date, "YYYY-MM-DD", true);
@@ -681,8 +688,6 @@ app.post("/api/bookings", async (req, res) => {
     return res.status(400).json({ error: "Horaire hors plage d'ouverture (09:00 - 18:00)." });
   }
 
-  const normalizedAddress = String(address || "").trim();
-
   if (normalizedAddress.length > 250) {
     return res.status(400).json({ error: "L'adresse est trop longue." });
   }
@@ -693,12 +698,12 @@ app.post("/api/bookings", async (req, res) => {
     const info = db.prepare(
       `INSERT INTO bookings (client_name, client_email, client_address, service, date, time, created_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(name.trim(), email.trim().toLowerCase(), normalizedAddress || null, service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt);
+    ).run(name.trim(), normalizedEmail, normalizedAddress, service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt);
 
     const booking = {
       id: info.lastInsertRowid,
       client_name: name.trim(),
-      client_email: email.trim().toLowerCase(),
+      client_email: normalizedEmail,
       client_address: normalizedAddress,
       service: service.trim(),
       date: normalizedDate.format("YYYY-MM-DD"),
