@@ -3,7 +3,8 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Domicile Barber - Coupe, barbe et style</title>
+    <title>Domicile Barber - Accueil</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Manrope:wght@400;600;700&display=swap" rel="stylesheet" />
@@ -11,12 +12,12 @@
   </head>
   <body>
     <header class="hero">
-      <div class="hero-shell">
+      <div class="hero-shell container-xxl">
         <span class="shape shape-1"></span>
         <span class="shape shape-2"></span>
         <span class="shape shape-3"></span>
 
-        <nav class="nav">
+        <nav class="nav align-items-center">
           <div class="brand">
             <span class="brand-mark">B</span>
             <div>
@@ -24,165 +25,60 @@
               <p>Coupe,  et style</p>
             </div>
           </div>
-
-          
+          <div class="nav-links d-flex align-items-center gap-3 gap-lg-4 text-uppercase fw-semibold small">
+            <a href="index.html">Accueil</a>
+            <a href="fonctionnement.html">Le fonctionnement</a>
+            <a href="reservation.html">Prendre rendez-vous</a>
+          </div>
         </nav>
 
-        <div class="hero-grid">
-          <div class="hero-copy">
-            <p class="eyebrow">Réservation </p>
+        <div class="hero-grid row g-4 align-items-center">
+          <div class="hero-copy col-lg-7">
+            <p class="eyebrow">Accueil</p>
             <h1>Bienvenue chez Domicile Barber..</h1>
             <p class="lead">
               Je suis un coiffeur à domicile specialiser dans les coupes de type taper,
-              Réserve ton créneau en ligne en quelques secondes et profite d’une 
-              coupe net precise,  un style qui te ressemble.
+              découvre mon fonctionnement, puis reserve ton creneau en ligne en quelques secondes pour profiter d'une
+              coupe nette et precise, avec un style qui te ressemble.
               
             </p>
 
             <div class="cta-row">
-              <a href="#booking" class="btn-primary">Prendre rendez-vous</a>
-              
+              <a href="fonctionnement.html" class="btn-primary">Voir le service</a>
+              <a href="reservation.html" class="btn-outline">Prendre rendez-vous</a>
             </div>
-
-           
           </div>
 
-          <aside class="hero-card">
-            <span class="card-kicker">Réservation express</span>
-            <h3>Un parcours clair et moderne.</h3>
+          <aside class="hero-card col-lg-5 shadow-lg">
+            <span class="card-kicker">Parcours en 3 etapes</span>
+            <h3>Un site simple et direct.</h3>
             <ul class="feature-list">
-              <li>Choix du service et de la date</li>
-              <li>Horaires réellement disponibles</li>
-              <li>Confirmation immédiate</li>
+              <li>Decouvrir le fonctionnement</li>
+              <li>Choisir le service et le creneau</li>
+              <li>Recevoir une confirmation immediate</li>
             </ul>
-
-            
-             
           </aside>
         </div>
       </div>
     </header>
 
     <main>
-      <section class="highlights section">
-        <article class="info-card">
+      <section class="highlights section container-xxl">
+        <article class="info-card shadow-sm">
           <span class="info-icon">01</span>
-          <h3>Réservation </h3>
-          <p>Un parcours simple, rapide et clair sur mobile comme sur ordinateur.<br>Fais ta réservation en ligne en quelques clics.</p>
+          <h3>Accueil</h3>
+          <p>Une premiere page claire pour comprendre l'univers Domicile Barber et lancer rapidement le parcours.</p>
         </article>
-        <article class="info-card">
+        <article class="info-card shadow-sm">
           <span class="info-icon">02</span>
-          <h3>Zone de deplacement</h3>
-          <p>Intervention dans l'est de l'ile selon disponibilite et adresse indiquee lors de la reservation.</p>
+          <h3>Le fonctionnement</h3>
+          <p>Une page dediee pour expliquer le service a domicile, les visuels et la facon dont le deplacement se passe.</p>
         </article>
-       
-      </section>
-
-      <section id="salon" class="gallery section">
-        <div class="section-head">
-          <div>
-            <p class="eyebrow">Le fonctionnement</p>
-            <h2>Coiffure à domicile.</h2>
-          </div>
-          <p class="subtitle">Quelques visuels pour découvrir le services à domicile, vous reservez un crenau
-            et j'suis en route !.</p>
-        </div>
-
-        <div class="gallery-grid">
-          <div class="gallery-card">
-            <img src="images/client_1.jpg" alt="Photo de l'entreprise" loading="lazy" decoding="async" />
-          </div>
-          <div class="gallery-card">
-            <img src="images/client_2.jpg" alt="Photo YP Family" loading="lazy" decoding="async" />
-          </div>
-          <div class="gallery-card">
-            <img src="images/client_3.jpg" alt="Photo YP Family" loading="lazy" decoding="async" />
-          </div>
-          
-        </div>
-      </section>
-
-      <section id="booking" class="booking section">
-        <div class="booking-layout">
-          <div class="booking-copy">
-            <p class="eyebrow">Prise de rendez-vous</p>
-            <h2>Réserve ton créneau en ligne.</h2>
-            <p class="subtitle">
-              Choisis ta prestation, sélectionne une date et vois instantanément les disponibilités.
-            </p>
-
-           
-          </div>
-
-          <form id="booking-form" class="booking-form">
-            <div class="field">
-              <label for="name">Nom</label>
-              <input id="name" name="name" type="text" required />
-            </div>
-            <div class="field">
-              <label for="email">Email</label>
-              <input id="email" name="email" type="email" inputmode="email" autocomplete="email" required pattern="^[^\s@]+@[^\s@]+\.[^\s@]+$" title="Entre une adresse email valide, par exemple nom@example.com" />
-            </div>
-            <div class="field">
-              <label for="service">Service</label>
-              <select id="service" name="service" required>
-                <option value="">Choisir un service</option>
-                <option value="Coupe classique">Coupe classique</option>
-                <option value="Coupe + barbe">Coupe + barbe</option>
-                <option value="Rasage traditionnel">Rasage traditionnel</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="date">Date</label>
-              <input id="date" name="date" type="date" required />
-            </div>
-
-            <div class="slots-wrapper">
-              <p>Horaires disponibles</p>
-              <div id="slots" class="slots"></div>
-            </div>
-
-            <div class="field field-full">
-              <label for="address">Adresse</label>
-              <input id="address" name="address" type="text" placeholder="Adresse du client pour le deplacement" autocomplete="street-address" required />
-            </div>
-
-            <input type="hidden" id="time" name="time" required />
-            <button type="submit" class="btn-primary">Confirmer le rendez-vous</button>
-            <p id="message" class="message"></p>
-            <section id="booking-ticket" class="booking-ticket" hidden>
-              <div class="booking-ticket__card" id="booking-ticket-card">
-                <p class="booking-ticket__eyebrow">Confirmation client</p>
-                <h3 id="ticket-title" class="booking-ticket__title">Votre rendez-vous est enregistre</h3>
-                <dl class="booking-ticket__details">
-                  <div>
-                    <dt>Nom</dt>
-                    <dd id="ticket-name">-</dd>
-                  </div>
-                  <div>
-                    <dt>Service</dt>
-                    <dd id="ticket-service">-</dd>
-                  </div>
-                  <div>
-                    <dt>Date</dt>
-                    <dd id="ticket-date">-</dd>
-                  </div>
-                  <div>
-                    <dt>Heure</dt>
-                    <dd id="ticket-time">-</dd>
-                  </div>
-                </dl>
-                <p class="booking-ticket__note">Conserve ce recapitulatif et presente-toi quelques minutes avant l'horaire reserve.</p>
-                
-                
-              </div>
-              <div class="booking-ticket__actions">
-                <button id="download-booking" type="button" class="booking-download booking-ticket__download" hidden>Telecharger mon rendez-vous en PDF</button>
-                <button id="add-to-calendar" type="button" class="btn-outline booking-ticket__calendar" hidden>Ajouter a mon agenda</button>
-              </div>
-            </section>
-          </form>
-        </div>
+        <article class="info-card shadow-sm">
+          <span class="info-icon">03</span>
+          <h3>Reservation</h3>
+          <p>Une page dediee a la prise de rendez-vous avec confirmation, PDF et ajout a l'agenda client.</p>
+        </article>
       </section>
     </main>
 
@@ -194,12 +90,10 @@
 
         <div class="site-footer__bottom">
           <span>© 2026 Domicile Barber</span>
-          <a href="#booking">Prendre rendez-vous</a>
+          <a href="reservation.html">Prendre rendez-vous</a>
         </div>
       </div>
     </footer>
 
-    <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-    <script src="app.js?v=20260502"></script>
   </body>
 </html>
