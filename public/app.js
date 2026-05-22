@@ -286,7 +286,8 @@ form.addEventListener("submit", async (event) => {
     email: formData.get("email"),
     service: formData.get("service"),
     date: formData.get("date"),
-    time: formData.get("time")
+    time: formData.get("time"),
+    address: formData.get("address")
   };
 
   try {
@@ -317,7 +318,8 @@ form.addEventListener("submit", async (event) => {
       client_email: payload.email,
       service: payload.service,
       date: payload.date,
-      time: payload.time
+      time: payload.time,
+      address: payload.address
     };
 
     setMessage(buildBookingMessage(confirmedBooking), "ok");

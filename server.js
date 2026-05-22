@@ -351,11 +351,24 @@ async function sendTelegramNotification(booking) {
 
   if (!token || !chatId) return;
 
-  const payload = JSON.stringify({
+  const normalizedAddress = String(booking.client_address || "").trim();
+  const mapsUrl = normalizedAddress
+    ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(normalizedAddress)}`
+    : "";
+
+  const telegramPayload = {
     chat_id: chatId,
-    text: `🔔 Nouveau rendez-vous!\n👤 ${booking.client_name}\n✂️ ${booking.service}\n📅 ${booking.date} à ${booking.time}\n📧 ${booking.client_email}`,
+    text: `🔔 Nouveau rendez-vous!\n👤 ${booking.client_name}\n✂️ ${booking.service}\n📅 ${booking.date} à ${booking.time}\n📧 ${booking.client_email}${normalizedAddress ? `\n📍 ${normalizedAddress}` : ""}`,
     disable_notification: false
-  });
+  };
+
+  if (mapsUrl) {
+    telegramPayload.reply_markup = {
+      inline_keyboard: [[{ text: "Ouvrir dans Google Maps", url: mapsUrl }]]
+    };
+  }
+
+  const payload = JSON.stringify(telegramPayload);
 
   for (let attempt = 1; attempt <= 3; attempt += 1) {
     try {
@@ -423,7 +436,7 @@ async function sendBookingEmails(booking) {
   const ownerResult = await sendEmail({
     to: OWNER_EMAIL,
     subject: "Nouveau rendez-vous client",
-    text: `Nouveau rendez-vous:\nClient: ${booking.client_name}\nEmail: ${booking.client_email}\nService: ${booking.service}\nDate: ${booking.date}\nHeure: ${booking.time}`
+    text: `Nouveau rendez-vous:\nClient: ${booking.client_name}\nEmail: ${booking.client_email}${booking.client_address ? `\nAdresse: ${booking.client_address}` : ""}\nService: ${booking.service}\nDate: ${booking.date}\nHeure: ${booking.time}`
   });
 
   console.log("Client email accepted:", clientResult.accepted || []);
@@ -640,7 +653,7 @@ app.delete("/api/bookings/:id", requireAdmin, (req, res) => {
 });
 
 app.post("/api/bookings", async (req, res) => {
-  const { name, email, service, date, time } = req.body;
+  const { name, email, service, date, time, address } = req.body;
 
   if (!name || !email || !service || !date || !time) {
     return res.status(400).json({ error: "Tous les champs sont obligatoires." });
@@ -668,18 +681,25 @@ app.post("/api/bookings", async (req, res) => {
     return res.status(400).json({ error: "Horaire hors plage d'ouverture (09:00 - 18:00)." });
   }
 
+  const normalizedAddress = String(address || "").trim();
+
+  if (normalizedAddress.length > 250) {
+    return res.status(400).json({ error: "L'adresse est trop longue." });
+  }
+
   const createdAt = dayjs().format("YYYY-MM-DD HH:mm:ss");
 
   try {
     const info = db.prepare(
-      `INSERT INTO bookings (client_name, client_email, service, date, time, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
-    ).run(name.trim(), email.trim().toLowerCase(), service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt);
+      `INSERT INTO bookings (client_name, client_email, client_address, service, date, time, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
+    ).run(name.trim(), email.trim().toLowerCase(), normalizedAddress || null, service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt);
 
     const booking = {
       id: info.lastInsertRowid,
       client_name: name.trim(),
       client_email: email.trim().toLowerCase(),
+      client_address: normalizedAddress,
       service: service.trim(),
       date: normalizedDate.format("YYYY-MM-DD"),
       time,

@@ -9,6 +9,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     client_name TEXT NOT NULL,
     client_email TEXT NOT NULL,
+    client_address TEXT,
     service TEXT NOT NULL,
     date TEXT NOT NULL,
     time TEXT NOT NULL,
@@ -39,6 +40,12 @@ db.exec(`
 
 try {
   db.exec("ALTER TABLE bookings ADD COLUMN status TEXT DEFAULT 'Confirme'");
+} catch {
+  // Column already exists.
+}
+
+try {
+  db.exec("ALTER TABLE bookings ADD COLUMN client_address TEXT");
 } catch {
   // Column already exists.
 }

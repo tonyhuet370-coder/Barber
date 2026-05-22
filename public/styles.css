@@ -418,6 +418,10 @@ h3 {
   gap: 0.35rem;
 }
 
+.field-full {
+  grid-column: 1 / -1;
+}
+
 label {
   font-weight: 700;
 }
