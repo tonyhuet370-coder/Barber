@@ -158,39 +158,12 @@ main {
   display: flex;
   align-items: center;
   gap: 0.7rem;
-  padding: 0.45rem;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(23, 27, 34, 0.08);
-  box-shadow: 0 12px 28px rgba(20, 28, 45, 0.08);
-  backdrop-filter: blur(12px);
 }
 
 .nav-links a {
   text-decoration: none;
   color: var(--ink);
   font-weight: 700;
-}
-
-.nav-link-chip {
-  border-radius: 999px;
-  padding: 0.78rem 1.15rem;
-  color: var(--ink);
-  letter-spacing: 0.03em;
-  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.nav-links .nav-link-chip:hover,
-.nav-links .nav-link-chip:focus-visible {
-  color: var(--ink);
-  background: rgba(185, 120, 63, 0.12);
-  transform: translateY(-1px);
-}
-
-.nav-links .nav-link-chip.active {
-  color: #fff;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  box-shadow: 0 10px 22px rgba(185, 120, 63, 0.26);
 }
 
 .hero-grid {
@@ -870,14 +843,7 @@ select:focus {
 
   .nav-links {
     width: 100%;
-    justify-content: center;
-    flex-wrap: wrap;
-    border-radius: 24px;
-  }
-
-  .nav-link-chip {
-    flex: 1 1 180px;
-    text-align: center;
+    justify-content: space-between;
   }
 
   .hero-shell,
