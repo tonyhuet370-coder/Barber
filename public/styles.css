@@ -813,6 +813,13 @@ select:focus {
   font-weight: 800;
 }
 
+@media (min-width: 1200px) {
+  .hero-shell {
+    max-width: 1280px;
+    padding: 1.35rem 1.45rem 1.8rem;
+  }
+}
+
 @media (max-width: 920px) {
   .hero-grid,
   .booking-layout,
