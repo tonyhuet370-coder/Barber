@@ -384,6 +384,7 @@ form.addEventListener("submit", async (event) => {
   const payload = {
     name: formData.get("name"),
     email: formData.get("email"),
+    phone: formData.get("phone"),
     service: formData.get("service"),
     date: formData.get("date"),
     time: formData.get("time"),

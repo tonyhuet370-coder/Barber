@@ -45,6 +45,12 @@ try {
 }
 
 try {
+  db.exec("ALTER TABLE bookings ADD COLUMN client_phone TEXT");
+} catch {
+  // Column already exists.
+}
+
+try {
   db.exec("ALTER TABLE bookings ADD COLUMN client_address TEXT");
 } catch {
   // Column already exists.

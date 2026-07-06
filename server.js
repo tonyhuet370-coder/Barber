@@ -358,7 +358,7 @@ async function sendTelegramNotification(booking) {
 
   const telegramPayload = {
     chat_id: chatId,
-    text: `🔔 Nouveau rendez-vous!\n👤 ${booking.client_name}\n✂️ ${booking.service}\n📅 ${booking.date} à ${booking.time}\n📧 ${booking.client_email}${normalizedAddress ? `\n📍 ${normalizedAddress}` : ""}`,
+    text: `🔔 Nouveau rendez-vous!\n👤 ${booking.client_name}\n✂️ ${booking.service}\n📅 ${booking.date} à ${booking.time}\n📧 ${booking.client_email}${booking.client_phone ? `\n📞 ${booking.client_phone}` : ""}${normalizedAddress ? `\n📍 ${normalizedAddress}` : ""}`,
     disable_notification: false
   };
 
@@ -653,17 +653,23 @@ app.delete("/api/bookings/:id", requireAdmin, (req, res) => {
 });
 
 app.post("/api/bookings", async (req, res) => {
-  const { name, email, service, date, time, address } = req.body;
+  const { name, email, phone, service, date, time, address } = req.body;
   const normalizedEmail = String(email || "").trim().toLowerCase();
+  const normalizedPhone = String(phone || "").trim();
   const normalizedAddress = String(address || "").trim();
 
-  if (!name || !normalizedEmail || !service || !date || !time || !normalizedAddress) {
+  if (!name || !normalizedEmail || !normalizedPhone || !service || !date || !time || !normalizedAddress) {
     return res.status(400).json({ error: "Tous les champs sont obligatoires." });
   }
 
   const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail);
   if (!validEmail) {
     return res.status(400).json({ error: "Adresse email invalide." });
+  }
+
+  const validPhone = /^[\d\s().+\-]{6,20}$/.test(normalizedPhone);
+  if (!validPhone) {
+    return res.status(400).json({ error: "Numero de telephone invalide." });
   }
 
   const normalizedDate = dayjs(date, "YYYY-MM-DD", true);
@@ -696,14 +702,15 @@ app.post("/api/bookings", async (req, res) => {
 
   try {
     const info = db.prepare(
-      `INSERT INTO bookings (client_name, client_email, client_address, service, date, time, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`
-    ).run(name.trim(), normalizedEmail, normalizedAddress, service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt);
+      `INSERT INTO bookings (client_name, client_email, client_phone, client_address, service, date, time, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
+    ).run(name.trim(), normalizedEmail, normalizedPhone, normalizedAddress, service.trim(), normalizedDate.format("YYYY-MM-DD"), time, createdAt);
 
     const booking = {
       id: info.lastInsertRowid,
       client_name: name.trim(),
       client_email: normalizedEmail,
+      client_phone: normalizedPhone,
       client_address: normalizedAddress,
       service: service.trim(),
       date: normalizedDate.format("YYYY-MM-DD"),
