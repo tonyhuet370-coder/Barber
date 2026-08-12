@@ -216,7 +216,7 @@ function getDailySlots() {
   let hour = 9;
   let minute = 0;
 
-  while (hour < 18 || (hour === 18 && minute === 0)) {
+  while (hour < 12 || (hour === 12 && minute === 0)) {
     const hh = String(hour).padStart(2, "0");
     const mm = String(minute).padStart(2, "0");
     slots.push(`${hh}:${mm}`);
